@@ -1,0 +1,46 @@
+{{define "product.html"}}
+{{template "base" .}}
+{{end}}
+
+{{define "product_content"}}
+<div class="container">
+  <p style="margin-bottom:16px"><a href="/" style="color:#f68b1e">← Back to products</a></p>
+  <div class="product-detail">
+    <div>
+      <div class="detail-img">{{if .Product.ImageURL}}{{.Product.ImageURL}}{{else}}📦{{end}}</div>
+    </div>
+    <div>
+      <div style="font-size:12px;color:#f68b1e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">{{.Product.Category}}</div>
+      <h1 style="font-size:28px;font-weight:800;color:#222;margin-bottom:8px">{{.Product.Name}}</h1>
+      <div class="detail-price">KSh {{printf "%.0f" .Product.Price}}</div>
+      <p class="detail-desc">{{.Product.Description}}</p>
+      <div style="margin-bottom:20px">
+        {{if gt .Product.Stock 0}}
+        <span style="color:#2e7d32;font-weight:600">✅ In Stock — {{.Product.Stock}} available</span>
+        {{else}}
+        <span style="color:#c62828;font-weight:600">❌ Out of Stock</span>
+        {{end}}
+      </div>
+
+      {{if and .LoggedIn (gt .Product.Stock 0)}}
+      <form method="post" action="/cart/add" style="display:flex;gap:12px;align-items:center">
+        <input type="hidden" name="product_id" value="{{.Product.ID}}">
+        <label style="font-weight:600;font-size:14px">Qty:</label>
+        <input type="number" name="quantity" value="1" min="1" max="{{.Product.Stock}}"
+          style="width:70px;padding:8px;border:2px solid #ddd;border-radius:6px;font-size:16px">
+        <button type="submit" class="btn btn-orange" style="padding:12px 28px;font-size:16px">🛒 Add to Cart</button>
+      </form>
+      {{else if not .LoggedIn}}
+      <a href="/login" class="btn btn-orange" style="padding:12px 28px;font-size:16px">Login to Purchase</a>
+      {{end}}
+
+      <div style="margin-top:24px;padding-top:24px;border-top:1px solid #f0f0f0">
+        <div style="display:flex;gap:24px;font-size:13px;color:#666">
+          <span>🚚 Free delivery on orders over KSh 5,000</span>
+          <span>🔄 Easy 30-day returns</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

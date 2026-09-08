@@ -1,0 +1,70 @@
+{{define "index.html"}}
+{{template "base" .}}
+{{end}}
+
+{{define "index_content"}}
+<div class="container">
+  {{if not .Search}}
+  <div class="hero">
+    <div>
+      <h1>Shop Smarter,<br>Live Better</h1>
+      <p>Millions of products at your fingertips.<br>Fast delivery across Kenya.</p>
+      <a href="/register" class="btn" style="background:#fff;color:#f68b1e">Get Started →</a>
+    </div>
+    <div class="hero-emoji">🛍️</div>
+  </div>
+  {{end}}
+
+  {{if .Search}}
+  <h2 class="page-title">Results for "{{.Search}}" {{if .Products}}({{len .Products}} found){{else}}— no results{{end}}</h2>
+  {{end}}
+
+  <!-- Category filter -->
+  {{if .Categories}}
+  <div class="category-bar">
+    <a href="/" class="cat-pill {{if not .Category}}active{{end}}">All</a>
+    {{range .Categories}}
+    <a href="/?category={{.}}" class="cat-pill {{if eq . $.Category}}active{{end}}">{{.}}</a>
+    {{end}}
+  </div>
+  {{end}}
+
+  {{if .Category}}
+  <h2 class="page-title">{{.Category}}</h2>
+  {{end}}
+
+  {{if .Products}}
+  <div class="product-grid">
+    {{range .Products}}
+    <div class="product-card" onclick="window.location='/product/{{.ID}}'">
+      <div class="product-img">{{if .ImageURL}}{{.ImageURL}}{{else}}📦{{end}}</div>
+      <div class="product-info">
+        <div class="product-category">{{.Category}}</div>
+        <div class="product-name">{{.Name}}</div>
+        <div class="product-price">KSh {{printf "%.0f" .Price}}</div>
+        <div class="product-stock">{{if gt .Stock 0}}✅ In stock ({{.Stock}}){{else}}❌ Out of stock{{end}}</div>
+      </div>
+      <div class="product-actions">
+        <a href="/product/{{.ID}}" class="btn btn-outline btn-sm">View</a>
+        {{if gt .Stock 0}}
+        <form method="post" action="/cart/add" style="display:inline" onclick="event.stopPropagation()">
+          <input type="hidden" name="product_id" value="{{.ID}}">
+          <input type="hidden" name="quantity" value="1">
+          <input type="hidden" name="redirect" value="/">
+          <button type="submit" class="btn btn-orange btn-sm">Add to Cart</button>
+        </form>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+  </div>
+  {{else}}
+  <div class="empty-state">
+    <div class="icon">🔍</div>
+    <h3>No products found</h3>
+    <p>Try a different search term or browse all categories</p>
+    <a href="/" class="btn btn-orange">Browse All</a>
+  </div>
+  {{end}}
+</div>
+{{end}}

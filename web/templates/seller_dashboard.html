@@ -1,0 +1,68 @@
+{{define "seller_dashboard.html"}}
+{{template "base" .}}
+{{end}}
+{{define "content_seller"}}
+<div class="container">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+    <h1 class="page-title" style="margin:0">🏪 Seller Dashboard</h1>
+    <a href="/seller/products/new" class="btn btn-orange">+ Add Product</a>
+  </div>
+
+  <div class="seller-stats">
+    <div class="stat-card">
+      <div class="stat-num">{{len .Products}}</div>
+      <div class="stat-label">Total Products</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">{{countInStock .Products}}</div>
+      <div class="stat-label">In Stock</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">KSh {{totalValue .Products}}</div>
+      <div class="stat-label">Inventory Value</div>
+    </div>
+  </div>
+
+  {{if .Products}}
+  <div style="background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.1);overflow:hidden">
+    <table class="cart-table">
+      <thead>
+        <tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {{range .Products}}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:12px">
+              <span style="font-size:32px">{{if .ImageURL}}{{.ImageURL}}{{else}}📦{{end}}</span>
+              <a href="/product/{{.ID}}" style="font-weight:600;color:#222">{{.Name}}</a>
+            </div>
+          </td>
+          <td><span style="background:#fff3e0;color:#e65100;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:600">{{.Category}}</span></td>
+          <td style="font-weight:700;color:#f68b1e">KSh {{printf "%.0f" .Price}}</td>
+          <td>
+            {{if gt .Stock 0}}
+              <span style="color:#2e7d32;font-weight:600">{{.Stock}}</span>
+            {{else}}
+              <span style="color:#c62828;font-weight:600">0</span>
+            {{end}}
+          </td>
+          <td>
+            <a href="/seller/products/delete/{{.ID}}" class="btn btn-sm btn-red"
+              onclick="return confirm('Delete {{.Name}}?')">Delete</a>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <div class="empty-state">
+    <div class="icon">📦</div>
+    <h3>No products yet</h3>
+    <p>Start by adding your first product</p>
+    <a href="/seller/products/new" class="btn btn-orange">Add Product</a>
+  </div>
+  {{end}}
+</div>
+{{end}}

@@ -1,0 +1,37 @@
+{{define "login.html"}}
+{{template "base" .}}
+{{end}}
+
+{{define "login_content"}}
+<div class="container">
+  <div class="form-card">
+    <div class="form-title">Welcome Back 👋</div>
+    <div class="form-subtitle">Login to your Jumia account</div>
+
+    {{if .Message}}<div class="success-msg">{{.Message}}</div>{{end}}
+    {{if .Error}}<div class="error-msg">{{.Error}}</div>{{end}}
+
+    <form method="post" action="/login">
+      <div class="form-group">
+        <label>Email address</label>
+        <input type="email" name="email" placeholder="you@example.com" required autofocus>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Your password" required>
+      </div>
+      <button type="submit" class="btn btn-orange" style="width:100%;padding:12px;font-size:16px">Login →</button>
+    </form>
+
+    <div class="form-footer">
+      Don't have an account? <a href="/register">Sign up free</a>
+    </div>
+
+    <div style="margin-top:20px;padding:16px;background:#fff8f0;border-radius:8px;font-size:13px;color:#666">
+      <strong>Demo accounts:</strong><br>
+      🛍️ Buyer: buyer@demo.ke / demo123<br>
+      🏪 Seller: seller@jumia.ke / test
+    </div>
+  </div>
+</div>
+{{end}}

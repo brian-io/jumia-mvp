@@ -1,0 +1,167 @@
+{{define "base"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{.Title}}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;color:#333}
+  a{text-decoration:none;color:inherit}
+  .btn{display:inline-block;padding:10px 20px;border:none;border-radius:4px;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s}
+  .btn-orange{background:#f68b1e;color:#fff}.btn-orange:hover{background:#e07b0e}
+  .btn-red{background:#e53935;color:#fff}.btn-red:hover{background:#c62828}
+  .btn-outline{background:#fff;border:2px solid #f68b1e;color:#f68b1e}.btn-outline:hover{background:#f68b1e;color:#fff}
+  .btn-sm{padding:6px 14px;font-size:13px}
+  .badge{background:#e53935;color:#fff;border-radius:50%;padding:2px 7px;font-size:11px;font-weight:700}
+
+  /* Navbar */
+  .navbar{background:#f68b1e;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.2);position:sticky;top:0;z-index:100}
+  .nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:16px;padding:12px 16px}
+  .nav-logo{font-size:24px;font-weight:900;letter-spacing:-1px;color:#fff}
+  .nav-logo span{color:#ffd700}
+  .nav-search{flex:1;display:flex;gap:0}
+  .nav-search input{flex:1;padding:10px 16px;border:none;border-radius:4px 0 0 4px;font-size:14px;outline:none}
+  .nav-search button{padding:10px 18px;background:#ffd700;border:none;border-radius:0 4px 4px 0;cursor:pointer;font-weight:700;color:#333}
+  .nav-search button:hover{background:#f0c700}
+  .nav-links{display:flex;align-items:center;gap:12px}
+  .nav-links a{color:#fff;font-size:14px;font-weight:500;white-space:nowrap}
+  .nav-links a:hover{color:#ffd700}
+  .nav-cart{position:relative}
+
+  /* Layout */
+  .container{max-width:1200px;margin:0 auto;padding:20px 16px}
+  .page-title{font-size:22px;font-weight:700;margin-bottom:20px;color:#222}
+
+  /* Cards */
+  .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+  .product-card{background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);transition:transform .2s,box-shadow .2s;cursor:pointer}
+  .product-card:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.15)}
+  .product-img{height:160px;display:flex;align-items:center;justify-content:center;font-size:72px;background:linear-gradient(135deg,#fff8f0,#fff3e0)}
+  .product-info{padding:12px}
+  .product-name{font-size:14px;font-weight:600;color:#222;margin-bottom:4px;line-height:1.3;height:36px;overflow:hidden}
+  .product-category{font-size:11px;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+  .product-price{font-size:18px;font-weight:800;color:#f68b1e}
+  .product-stock{font-size:12px;color:#666;margin-top:4px}
+  .product-actions{padding:12px;padding-top:0;display:flex;gap:8px}
+
+  /* Category filter */
+  .category-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+  .cat-pill{padding:6px 16px;border-radius:20px;background:#fff;border:2px solid #ddd;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}
+  .cat-pill:hover,.cat-pill.active{background:#f68b1e;color:#fff;border-color:#f68b1e}
+
+  /* Cart */
+  .cart-table{width:100%;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+  .cart-table th,.cart-table td{padding:14px 16px;text-align:left;border-bottom:1px solid #f0f0f0}
+  .cart-table th{background:#fafafa;font-weight:600;font-size:13px;color:#666;text-transform:uppercase;letter-spacing:.5px}
+  .cart-summary{background:#fff;border-radius:8px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.1);margin-top:16px}
+  .summary-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0}
+  .summary-total{font-size:18px;font-weight:800;color:#f68b1e}
+
+  /* Forms */
+  .form-card{background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 12px rgba(0,0,0,.1);max-width:480px;margin:40px auto}
+  .form-group{margin-bottom:16px}
+  .form-group label{display:block;font-size:14px;font-weight:600;margin-bottom:6px;color:#444}
+  .form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 14px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;outline:none;transition:border-color .2s}
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#f68b1e}
+  .form-group textarea{resize:vertical;min-height:100px}
+  .form-title{font-size:24px;font-weight:800;text-align:center;margin-bottom:8px;color:#222}
+  .form-subtitle{font-size:14px;color:#888;text-align:center;margin-bottom:24px}
+  .error-msg{background:#fff3f3;color:#e53935;padding:10px 14px;border-radius:6px;font-size:14px;margin-bottom:16px;border-left:4px solid #e53935}
+  .success-msg{background:#f3fff3;color:#2e7d32;padding:10px 14px;border-radius:6px;font-size:14px;margin-bottom:16px;border-left:4px solid #2e7d32}
+  .form-footer{text-align:center;margin-top:20px;font-size:14px;color:#666}
+  .form-footer a{color:#f68b1e;font-weight:600}
+
+  /* Orders */
+  .order-card{background:#fff;border-radius:8px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.1);margin-bottom:16px}
+  .order-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .order-id{font-size:18px;font-weight:700}
+  .order-date{font-size:13px;color:#888}
+  .status-badge{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;text-transform:uppercase}
+  .status-pending{background:#fff8e1;color:#f9a825}
+  .status-processing{background:#e3f2fd;color:#1565c0}
+  .status-shipped{background:#e8f5e9;color:#2e7d32}
+  .status-delivered{background:#e8f5e9;color:#1b5e20}
+  .status-cancelled{background:#ffebee;color:#b71c1c}
+
+  /* Hero banner */
+  .hero{background:linear-gradient(135deg,#f68b1e,#ff5722);color:#fff;border-radius:12px;padding:40px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between}
+  .hero h1{font-size:36px;font-weight:900;margin-bottom:8px}
+  .hero p{font-size:16px;opacity:.9;margin-bottom:20px}
+  .hero-emoji{font-size:80px}
+
+  /* Product detail */
+  .product-detail{background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 12px rgba(0,0,0,.1);display:grid;grid-template-columns:300px 1fr;gap:32px}
+  .detail-img{height:280px;display:flex;align-items:center;justify-content:center;font-size:120px;background:linear-gradient(135deg,#fff8f0,#fff3e0);border-radius:8px}
+  .detail-price{font-size:32px;font-weight:900;color:#f68b1e;margin:12px 0}
+  .detail-desc{color:#555;line-height:1.6;margin-bottom:20px}
+
+  /* Seller */
+  .seller-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+  .stat-card{background:#fff;border-radius:8px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.1);text-align:center}
+  .stat-num{font-size:32px;font-weight:800;color:#f68b1e}
+  .stat-label{font-size:13px;color:#888;margin-top:4px}
+
+  /* Empty state */
+  .empty-state{text-align:center;padding:60px 20px}
+  .empty-state .icon{font-size:64px;margin-bottom:16px}
+  .empty-state h3{font-size:20px;font-weight:700;color:#444;margin-bottom:8px}
+  .empty-state p{color:#888;margin-bottom:20px}
+
+  /* Responsive */
+  @media(max-width:768px){
+    .product-grid{grid-template-columns:repeat(2,1fr)}
+    .hero{flex-direction:column;text-align:center}.hero-emoji{display:none}
+    .hero h1{font-size:26px}
+    .product-detail{grid-template-columns:1fr}
+    .seller-stats{grid-template-columns:1fr}
+    .nav-links{gap:8px}
+  }
+  @media(max-width:480px){
+    .product-grid{grid-template-columns:1fr}
+    .nav-search{display:none}
+  }
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">Ju<span>mia</span></a>
+    <form class="nav-search" action="/" method="get">
+      <input type="text" name="q" placeholder="Search products, brands, categories..." value="{{.Search}}">
+      <button type="submit">🔍</button>
+    </form>
+    <div class="nav-links">
+      {{if .LoggedIn}}
+        <span style="font-size:13px;opacity:.8">Hi, {{.UserName}}</span>
+        {{if eq .UserRole "seller"}}
+          <a href="/seller/dashboard">Dashboard</a>
+        {{end}}
+        <a href="/cart">🛒 Cart</a>
+        <a href="/orders">Orders</a>
+        <a href="/logout">Logout</a>
+      {{else}}
+        <a href="/login">Login</a>
+        <a href="/register" class="btn btn-sm" style="background:#ffd700;color:#333;border-radius:4px">Sign Up</a>
+      {{end}}
+    </div>
+  </div>
+</nav>
+{{template .ContentTemplate .}}
+{{end}}
+<footer style="background:#222;color:#aaa;text-align:center;padding:32px;margin-top:40px;font-size:13px">
+  <div style="max-width:1200px;margin:0 auto">
+    <p style="font-size:20px;font-weight:800;color:#f68b1e;margin-bottom:8px">Jumia Kenya</p>
+    <p>© 2024 Jumia MVP · Built with Go · Fast · Minimal · Launchable</p>
+    <div style="margin-top:16px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap">
+      <a href="/">Home</a>
+      <a href="/register">Register</a>
+      <a href="/login">Login</a>
+      <a href="/cart">Cart</a>
+      <a href="/orders">Orders</a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
+{{end}}

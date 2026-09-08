@@ -1,0 +1,40 @@
+{{define "register.html"}}
+{{template "base" .}}
+{{end}}
+{{define "register_content"}}
+<div class="container">
+  <div class="form-card">
+    <div class="form-title">Create Account 🎉</div>
+    <div class="form-subtitle">Join millions of Kenyans shopping on Jumia</div>
+
+    {{if .Error}}<div class="error-msg">{{.Error}}</div>{{end}}
+
+    <form method="post" action="/register">
+      <div class="form-group">
+        <label>Full name</label>
+        <input type="text" name="name" placeholder="John Kamau" required autofocus>
+      </div>
+      <div class="form-group">
+        <label>Email address</label>
+        <input type="email" name="email" placeholder="you@example.com" required>
+      </div>
+      <div class="form-group">
+        <label>Password (min 6 characters)</label>
+        <input type="password" name="password" placeholder="Create a strong password" required>
+      </div>
+      <div class="form-group">
+        <label>Account type</label>
+        <select name="role">
+          <option value="buyer">🛍️ Buyer — I want to shop</option>
+          <option value="seller">🏪 Seller — I want to sell products</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-orange" style="width:100%;padding:12px;font-size:16px">Create Account →</button>
+    </form>
+
+    <div class="form-footer">
+      Already have an account? <a href="/login">Login here</a>
+    </div>
+  </div>
+</div>
+{{end}}

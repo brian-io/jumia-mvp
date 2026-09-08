@@ -1,0 +1,35 @@
+{{define "orders.html"}}
+{{template "base" .}}
+{{end}}
+{{define "content_orders"}}
+<div class="container">
+  <h1 class="page-title">📦 My Orders</h1>
+  {{if .Orders}}
+    {{range .Orders}}
+    <div class="order-card">
+      <div class="order-header">
+        <div>
+          <div class="order-id">Order #{{.ID}}</div>
+          <div class="order-date">{{.CreatedAt.Format "Jan 2, 2006 · 3:04 PM"}}</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <span class="status-badge status-{{.Status}}">{{.Status}}</span>
+          <span style="font-size:18px;font-weight:800;color:#f68b1e">KSh {{printf "%.0f" .Total}}</span>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:14px;color:#666">📍 {{.Address}}</div>
+        <a href="/orders/{{.ID}}" class="btn btn-outline btn-sm">View Details</a>
+      </div>
+    </div>
+    {{end}}
+  {{else}}
+  <div class="empty-state">
+    <div class="icon">📦</div>
+    <h3>No orders yet</h3>
+    <p>Your order history will appear here</p>
+    <a href="/" class="btn btn-orange">Start Shopping</a>
+  </div>
+  {{end}}
+</div>
+{{end}}
