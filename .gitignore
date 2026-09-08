@@ -1,21 +1,63 @@
-# Binaries
-jumia-server
-*.exe
+# Copy this file into each new repo (or keep using the per-project copies).
+# Do not git-init this whole brian-projects folder.
 
-# Go
-vendor/
-*.test
-*.out
-
-# Env / secrets
+# Secrets and local config
 .env
 .env.*
 !.env.example
 *.pem
 *.key
+auth.json
+auth.txt
+*.ovpn
+*.conf
+wg-*.conf
+*.pcapng
 
-# Editor / OS
-.idea/
-.vscode/
+# OS / editor
 .DS_Store
 Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+.~lock.*
+
+# Dependencies and caches
+node_modules/
+vendor/
+.turbo/
+.cache/
+coverage/
+.phpunit.cache
+.phpunit.result.cache
+
+# Build artifacts
+dist/
+build/
+out/
+.next/
+*.o
+*.so
+*.a
+*.exe
+jumia-server
+
+# Archives and installers (never commit these from this folder)
+*.zip
+*.tar
+*.tar.gz
+*.deb
+*.flatpakref
+
+# Personal / media (this documents folder)
+*.pdf
+*.epub
+*.pptx
+*.webp
+*.jpeg
+*.srt
+*.html
+*.svg
+
+FreeRTOS/
