@@ -1,10 +1,10 @@
 package orders
 
 import (
+	"agora/shared/middleware"
+	"agora/shared/models"
+	"agora/shared/store"
 	"fmt"
-	"jumia-mvp/shared/middleware"
-	"jumia-mvp/shared/models"
-	"jumia-mvp/shared/store"
 	"net/http"
 	"strconv"
 	"strings"
@@ -22,7 +22,9 @@ type Service struct {
 
 func New(db *store.DB, cart CartService) *Service { return &Service{DB: db, Cart: cart} }
 
-type Tmpl interface { ExecuteTemplate(http.ResponseWriter, string, interface{}) error }
+type Tmpl interface {
+	ExecuteTemplate(http.ResponseWriter, string, interface{}) error
+}
 
 func (s *Service) RegisterRoutes(mux *http.ServeMux, tmpl Tmpl) {
 	mux.HandleFunc("/checkout", middleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
@@ -82,11 +84,17 @@ func (s *Service) RegisterRoutes(mux *http.ServeMux, tmpl Tmpl) {
 
 	mux.HandleFunc("/orders/", func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := middleware.GetUserID(r)
-		if !ok { http.Redirect(w, r, "/login", http.StatusFound); return }
+		if !ok {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
 		parts := strings.Split(r.URL.Path, "/")
 		orderID, _ := strconv.Atoi(parts[len(parts)-1])
 		order, err := s.DB.GetOrder(orderID, userID)
-		if err != nil { http.NotFound(w, r); return }
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
 		tmpl.ExecuteTemplate(w, "order_detail.html", map[string]interface{}{
 			"Title":    fmt.Sprintf("Order #%d", order.ID),
 			"Order":    order,

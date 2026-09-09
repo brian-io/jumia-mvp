@@ -1,9 +1,9 @@
 {{define "orders.html"}}
 {{template "base" .}}
 {{end}}
-{{define "content_orders"}}
+{{define "content"}}
 <div class="container">
-  <h1 class="page-title">📦 My Orders</h1>
+  <h1 class="page-title">My Orders</h1>
   {{if .Orders}}
     {{range .Orders}}
     <div class="order-card">
@@ -18,14 +18,13 @@
         </div>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="font-size:14px;color:#666">📍 {{.Address}}</div>
+        <div style="font-size:14px;color:#666">{{.Address}}</div>
         <a href="/orders/{{.ID}}" class="btn btn-outline btn-sm">View Details</a>
       </div>
     </div>
     {{end}}
   {{else}}
   <div class="empty-state">
-    <div class="icon">📦</div>
     <h3>No orders yet</h3>
     <p>Your order history will appear here</p>
     <a href="/" class="btn btn-orange">Start Shopping</a>

@@ -1,16 +1,16 @@
-# 🛒 Jumia MVP — Go Microservices E-Commerce
+# 🛒 agora MVP — Go Microservices E-Commerce
 
-A minimal but **fully launchable** Jumia-style marketplace built in pure Go.  
+A minimal but **fully launchable** agora-style marketplace built in pure Go.  
 **Zero external dependencies. Single binary. Runs anywhere.**
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # Clone and run
 git clone <repo>
-cd jumia-mvp
+cd agora
 make run
 # → http://localhost:8080
 ```
@@ -22,23 +22,23 @@ make docker
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-jumia-mvp/
+agora/
 ├── cmd/
-│   └── main.go              # 🚪 API Gateway — wires all services
+│   └── main.go              # API Gateway — wires all services
 ├── services/
-│   ├── auth/                # 🔐 Auth Service  (register, login, sessions)
-│   ├── catalog/             # 📦 Catalog Service (products, search, categories)
-│   ├── cart/                # 🛒 Cart Service    (add, update, remove items)
-│   └── orders/              # 📋 Orders Service  (checkout, order history)
+│   ├── auth/                # Auth Service  (register, login, sessions)
+│   ├── catalog/             # Catalog Service (products, search, categories)
+│   ├── cart/                # Cart Service    (add, update, remove items)
+│   └── orders/              # Orders Service  (checkout, order history)
 ├── shared/
-│   ├── middleware/          # 🛡️  Auth middleware (session extraction)
-│   ├── models/              # 📐 Shared data models
-│   └── store/               # 🗄️  JSON file store (zero-dep persistence)
+│   ├── middleware/          # Auth middleware (session extraction)
+│   ├── models/              # Shared data models
+│   └── store/               # JSON file store (zero-dep persistence)
 └── web/
-    └── templates/           # 🎨 HTML templates (responsive UI)
+    └── templates/           # HTML templates (responsive UI)
 ```
 
 ### Microservice Design
@@ -50,40 +50,40 @@ Each service is a **self-contained Go package** with:
 
 ---
 
-## ✅ Features (MVP)
+## Features
 
 ### Buyer
-- 🏠 Product catalog with search + category filter  
-- 🔍 Product detail pages
-- 🛒 Shopping cart (add, update qty, remove)
-- 💳 Checkout with delivery address
-- 📦 Order history and order details
-- 👤 Register / Login / Logout
+- Product catalog with search + category filter  
+- Product detail pages
+- Shopping cart (add, update qty, remove)
+- Checkout with delivery address
+- Order history and order details
+- Register / Login / Logout
 
 ### Seller
-- 🏪 Seller dashboard with inventory stats
-- ➕ List new products (name, price, stock, category, emoji icon)
-- 🗑️ Delete products
+- Seller dashboard with inventory stats
+- List new products (name, price, stock, category, emoji icon)
+- Delete products
 
 ### Platform
-- 📱 Fully responsive UI (mobile-first)
-- 🔐 Cookie-based session auth (SHA-256 hashed passwords)
-- 📊 Stock tracking (auto-decrements on order)
-- 💾 JSON file persistence (persists across restarts)
-- 🏥 Health check endpoint `/health`
+- Fully responsive UI (mobile-first)
+- Cookie-based session auth (SHA-256 hashed passwords)
+- Stock tracking (auto-decrements on order)
+- JSON file persistence (persists across restarts)
+- Health check endpoint `/health`
 
 ---
 
-## 👤 Demo Accounts
+## Demo Accounts
 
 | Role   | Email              | Password |
 |--------|--------------------|----------|
 | Buyer  | buyer@demo.ke      | demo123  |
-| Seller | seller@jumia.ke    | test     |
+| Seller | seller@agora.ke    | test     |
 
 ---
 
-## 🔌 API Endpoints
+## API Endpoints
 
 | Method | Path                        | Description        |
 |--------|-----------------------------|--------------------|
@@ -110,16 +110,16 @@ Each service is a **self-contained Go package** with:
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 | Env Var   | Default       | Description        |
 |-----------|---------------|--------------------|
 | `PORT`    | `8080`        | HTTP port          |
-| `DB_PATH` | `./jumia.json`| Data file path     |
+| `DB_PATH` | `./agora.json`| Data file path     |
 
 ---
 
-## 🔮 Scaling Up
+## Scaling Up
 
 This MVP uses JSON file storage — to scale:
 
@@ -131,14 +131,14 @@ This MVP uses JSON file storage — to scale:
 
 ---
 
-## 📦 Tech Stack
+## Tech Stack
 
-- **Language**: Go 1.22 (stdlib only — zero external deps)
+- **Language**: Go 1.27 (stdlib only — zero external deps)
 - **Storage**: JSON file (no DB setup required)
 - **Templates**: `html/template` (XSS-safe)
 - **Auth**: SHA-256 + cookie sessions
-- **CSS**: Inline responsive CSS (Jumia orange theme)
+- **CSS**: Inline responsive CSS (agora orange theme)
 
 ---
 
-Built to launch. Scale when ready. 🚀
+Built to launch. Scale when ready. 

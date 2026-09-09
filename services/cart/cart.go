@@ -1,9 +1,9 @@
 package cart
 
 import (
-	"jumia-mvp/shared/middleware"
-	"jumia-mvp/shared/models"
-	"jumia-mvp/shared/store"
+	"agora/shared/middleware"
+	"agora/shared/models"
+	"agora/shared/store"
 	"net/http"
 	"strconv"
 	"strings"
@@ -16,13 +16,17 @@ func New(db *store.DB) *Service { return &Service{DB: db} }
 func (s *Service) GetCart(userID int) ([]models.CartItem, float64) {
 	items := s.DB.GetCartItems(userID)
 	total := 0.0
-	for _, ci := range items { total += ci.Product.Price * float64(ci.Quantity) }
+	for _, ci := range items {
+		total += ci.Product.Price * float64(ci.Quantity)
+	}
 	return items, total
 }
 
 func (s *Service) ClearCart(userID int) { s.DB.ClearCart(userID) }
 
-type Tmpl interface { ExecuteTemplate(http.ResponseWriter, string, interface{}) error }
+type Tmpl interface {
+	ExecuteTemplate(http.ResponseWriter, string, interface{}) error
+}
 
 func (s *Service) RegisterRoutes(mux *http.ServeMux, tmpl Tmpl) {
 	mux.HandleFunc("/cart", middleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
@@ -38,11 +42,15 @@ func (s *Service) RegisterRoutes(mux *http.ServeMux, tmpl Tmpl) {
 		r.ParseForm()
 		productID, _ := strconv.Atoi(r.FormValue("product_id"))
 		quantity, _ := strconv.Atoi(r.FormValue("quantity"))
-		if quantity == 0 { quantity = 1 }
+		if quantity == 0 {
+			quantity = 1
+		}
 		userID, _ := middleware.GetUserID(r)
 		s.DB.AddToCart(userID, productID, quantity)
 		redirect := r.FormValue("redirect")
-		if redirect == "" { redirect = "/cart" }
+		if redirect == "" {
+			redirect = "/cart"
+		}
 		http.Redirect(w, r, redirect, http.StatusFound)
 	}))
 
@@ -57,7 +65,10 @@ func (s *Service) RegisterRoutes(mux *http.ServeMux, tmpl Tmpl) {
 
 	mux.HandleFunc("/cart/remove/", func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := middleware.GetUserID(r)
-		if !ok { http.Redirect(w, r, "/login", http.StatusFound); return }
+		if !ok {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
 		parts := strings.Split(r.URL.Path, "/")
 		productID, _ := strconv.Atoi(parts[len(parts)-1])
 		s.DB.RemoveCartItem(userID, productID)

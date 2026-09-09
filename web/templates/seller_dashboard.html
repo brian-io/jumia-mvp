@@ -1,11 +1,27 @@
 {{define "seller_dashboard.html"}}
 {{template "base" .}}
 {{end}}
-{{define "content_seller"}}
+
+{{define "content"}}
 <div class="container">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-    <h1 class="page-title" style="margin:0">🏪 Seller Dashboard</h1>
-    <a href="/seller/products/new" class="btn btn-orange">+ Add Product</a>
+
+  <div class="page-header">
+    <h1 class="page-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9 5 3h14l2 6"></path>
+        <path d="M3 9v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9"></path>
+        <path d="M3 9h18"></path>
+        <path d="M9 13a3 3 0 0 0 6 0"></path>
+      </svg>
+      Seller Dashboard
+    </h1>
+    <a href="/seller/products/new" class="btn btn-orange">
+      <svg class="inline-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14"></path>
+        <path d="M5 12h14"></path>
+      </svg>
+      Add Product
+    </a>
   </div>
 
   <div class="seller-stats">
@@ -24,7 +40,7 @@
   </div>
 
   {{if .Products}}
-  <div style="background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.1);overflow:hidden">
+  <div class="table-wrap">
     <table class="cart-table">
       <thead>
         <tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr>
@@ -33,23 +49,29 @@
         {{range .Products}}
         <tr>
           <td>
-            <div style="display:flex;align-items:center;gap:12px">
-              <span style="font-size:32px">{{if .ImageURL}}{{.ImageURL}}{{else}}📦{{end}}</span>
-              <a href="/product/{{.ID}}" style="font-weight:600;color:#222">{{.Name}}</a>
+            <div class="table-item">
+              <div class="thumb thumb-md">
+                {{if .ImageURL}}
+                  {{.ImageURL}}
+                {{else}}
+                  <span class="thumb-fallback">{{slice .Name 0 1}}</span>
+                {{end}}
+              </div>
+              <a href="/product/{{.ID}}" class="table-item-name">{{.Name}}</a>
             </div>
           </td>
-          <td><span style="background:#fff3e0;color:#e65100;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:600">{{.Category}}</span></td>
-          <td style="font-weight:700;color:#f68b1e">KSh {{printf "%.0f" .Price}}</td>
+          <td><span class="pill pill-orange">{{.Category}}</span></td>
+          <td class="cell-price">KSh {{printf "%.0f" .Price}}</td>
           <td>
             {{if gt .Stock 0}}
-              <span style="color:#2e7d32;font-weight:600">{{.Stock}}</span>
+              <span class="text-success cell-strong">{{.Stock}}</span>
             {{else}}
-              <span style="color:#c62828;font-weight:600">0</span>
+              <span class="text-danger cell-strong">0</span>
             {{end}}
           </td>
           <td>
             <a href="/seller/products/delete/{{.ID}}" class="btn btn-sm btn-red"
-              onclick="return confirm('Delete {{.Name}}?')">Delete</a>
+               onclick="return confirm('Delete {{.Name}}?')">Delete</a>
           </td>
         </tr>
         {{end}}
@@ -58,11 +80,18 @@
   </div>
   {{else}}
   <div class="empty-state">
-    <div class="icon">📦</div>
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m21 8-9-6-9 6 9 6 9-6Z"></path>
+        <path d="M3 8v8l9 6 9-6V8"></path>
+        <path d="M3 8l9 6 9-6"></path>
+      </svg>
+    </div>
     <h3>No products yet</h3>
     <p>Start by adding your first product</p>
     <a href="/seller/products/new" class="btn btn-orange">Add Product</a>
   </div>
   {{end}}
+
 </div>
 {{end}}

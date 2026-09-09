@@ -2,53 +2,78 @@
 {{template "base" .}}
 {{end}}
 
-{{define "checkout_content"}}
+{{define "content"}}
 <div class="container">
-  <h1 class="page-title">💳 Checkout</h1>
 
-  {{if .Error}}<div class="error-msg" style="max-width:700px">{{.Error}}</div>{{end}}
+  <h1 class="page-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="1" y="4" width="22" height="16" rx="2"></rect>
+      <path d="M1 10h22"></path>
+    </svg>
+    Checkout
+  </h1>
 
-  <div style="display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start;max-width:900px">
-    <div>
-      <div style="background:#fff;border-radius:8px;padding:24px;box-shadow:0 1px 4px rgba(0,0,0,.1)">
-        <h2 style="font-size:18px;font-weight:700;margin-bottom:20px">📍 Delivery Details</h2>
-        <form method="post" action="/checkout">
-          <div class="form-group">
-            <label>Full delivery address</label>
-            <textarea name="address" rows="3" placeholder="e.g. 123 Kimathi Street, Nairobi CBD, Nairobi 00100" required></textarea>
+  {{if .Error}}<div class="error-msg">{{.Error}}</div>{{end}}
+
+  <div class="split-layout">
+
+    <div class="panel">
+      <h2 class="panel-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0Z"></path>
+          <circle cx="12" cy="10" r="3"></circle>
+        </svg>
+        Delivery Details
+      </h2>
+
+      <form method="post" action="/checkout">
+        <div class="form-group">
+          <label>Full delivery address</label>
+          <textarea name="address" rows="3" placeholder="e.g. 123 Kimathi Street, Nairobi CBD, Nairobi 00100" required></textarea>
+        </div>
+
+        <div class="info-note info-note-success">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="4" width="22" height="16" rx="2"></rect>
+            <path d="M1 10h22"></path>
+          </svg>
+          <span>
+            <strong>Payment:</strong> Cash on Delivery / M-Pesa on delivery.<br>
+            <span class="text-muted">No card details needed &mdash; pay when your order arrives.</span>
+          </span>
+        </div>
+
+        <button type="submit" class="btn btn-orange btn-block">Place Order &rarr;</button>
+      </form>
+    </div>
+
+    <div class="panel">
+      <h3 class="panel-title">Order Items ({{len .Items}})</h3>
+      {{range .Items}}
+      <div class="order-item">
+        <div class="order-item-left">
+          <div class="thumb thumb-sm">
+            {{if .Product.ImageURL}}
+              {{.Product.ImageURL}}
+            {{else}}
+              <span class="thumb-fallback">{{slice .Product.Name 0 1}}</span>
+            {{end}}
           </div>
-          <div style="padding:16px;background:#e8f5e9;border-radius:8px;margin-bottom:16px;font-size:14px">
-            <strong>💳 Payment:</strong> Cash on Delivery / M-Pesa on delivery<br>
-            <span style="color:#666">No card details needed — pay when your order arrives!</span>
+          <div>
+            <div class="order-item-name">{{.Product.Name}}</div>
+            <div class="order-item-meta">Qty: {{.Quantity}}</div>
           </div>
-          <button type="submit" class="btn btn-orange" style="width:100%;padding:14px;font-size:16px">
-            Place Order →
-          </button>
-        </form>
+        </div>
+        <div class="order-item-subtotal">KSh {{printf "%.0f" (mul .Product.Price (toFloat .Quantity))}}</div>
+      </div>
+      {{end}}
+      <div class="order-total-row">
+        <span>Total</span>
+        <span>KSh {{printf "%.0f" .Total}}</span>
       </div>
     </div>
 
-    <div>
-      <div style="background:#fff;border-radius:8px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.1)">
-        <h3 style="font-size:15px;font-weight:700;margin-bottom:16px">Order Items ({{len .Items}})</h3>
-        {{range .Items}}
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f5f5f5">
-          <div style="display:flex;gap:10px;align-items:center">
-            <span style="font-size:24px">{{if .Product.ImageURL}}{{.Product.ImageURL}}{{else}}📦{{end}}</span>
-            <div>
-              <div style="font-size:13px;font-weight:600">{{.Product.Name}}</div>
-              <div style="font-size:12px;color:#888">Qty: {{.Quantity}}</div>
-            </div>
-          </div>
-          <div style="font-weight:700;color:#f68b1e;font-size:14px">KSh {{printf "%.0f" (mul .Product.Price (toFloat .Quantity))}}</div>
-        </div>
-        {{end}}
-        <div style="display:flex;justify-content:space-between;padding-top:16px;font-size:18px;font-weight:800">
-          <span>Total</span>
-          <span style="color:#f68b1e">KSh {{printf "%.0f" .Total}}</span>
-        </div>
-      </div>
-    </div>
   </div>
+
 </div>
 {{end}}

@@ -1,17 +1,24 @@
 {{define "order_detail.html"}}
 {{template "base" .}}
 {{end}}
-{{define "content_order_detail"}}
-<div class="container" style="max-width:700px">
+
+{{define "content"}}
+<div class="container container-narrow">
+
   {{if .Success}}
-  <div style="background:#e8f5e9;border-radius:12px;padding:32px;text-align:center;margin-bottom:24px">
-    <div style="font-size:64px;margin-bottom:12px">🎉</div>
-    <h2 style="color:#2e7d32;font-size:24px;font-weight:800">Order Placed Successfully!</h2>
-    <p style="color:#555;margin-top:8px">Thank you for your order. We'll deliver to your address soon.</p>
+  <div class="order-success">
+    <div class="order-success-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m5 13 4 4L19 7"></path>
+      </svg>
+    </div>
+    <h2>Order Placed Successfully!</h2>
+    <p>Thank you for your order. We'll deliver to your address soon.</p>
   </div>
   {{end}}
 
   <div class="order-card">
+
     <div class="order-header">
       <div>
         <div class="order-id">Order #{{.Order.ID}}</div>
@@ -20,34 +27,43 @@
       <span class="status-badge status-{{.Order.Status}}">{{.Order.Status}}</span>
     </div>
 
-    <div style="padding:16px;background:#f5f5f5;border-radius:8px;margin-bottom:16px">
-      <strong>📍 Delivery Address:</strong><br>
-      <span style="color:#555">{{.Order.Address}}</span>
+    <div class="order-address">
+      <strong>Delivery Address</strong>
+      <span>{{.Order.Address}}</span>
     </div>
 
-    <h3 style="font-weight:700;margin-bottom:12px">Order Items</h3>
+    <h3 class="order-section-title">Order Items</h3>
+
     {{range .Order.Items}}
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0f0f0">
-      <div style="display:flex;gap:12px;align-items:center">
-        <span style="font-size:32px">{{if .Product.ImageURL}}{{.Product.ImageURL}}{{else}}📦{{end}}</span>
+    <div class="order-item">
+      <div class="order-item-left">
+        <div class="order-item-thumb">
+          {{if .Product.ImageURL}}
+            {{.Product.ImageURL}}
+          {{else}}
+            <span class="order-item-thumb-fallback">{{slice .Product.Name 0 1}}</span>
+          {{end}}
+        </div>
         <div>
-          <div style="font-weight:600">{{.Product.Name}}</div>
-          <div style="font-size:13px;color:#888">Qty: {{.Quantity}} × KSh {{printf "%.0f" .Price}}</div>
+          <div class="order-item-name">{{.Product.Name}}</div>
+          <div class="order-item-meta">Qty: {{.Quantity}} &times; KSh {{printf "%.0f" .Price}}</div>
         </div>
       </div>
-      <div style="font-weight:700;color:#f68b1e">KSh {{printf "%.0f" (mul .Price (toFloat .Quantity))}}</div>
+      <div class="order-item-subtotal">KSh {{printf "%.0f" (mul .Price (toFloat .Quantity))}}</div>
     </div>
     {{end}}
 
-    <div style="display:flex;justify-content:space-between;padding-top:16px;font-size:20px;font-weight:800">
+    <div class="order-total-row">
       <span>Total Paid</span>
-      <span style="color:#f68b1e">KSh {{printf "%.0f" .Order.Total}}</span>
+      <span>KSh {{printf "%.0f" .Order.Total}}</span>
     </div>
+
   </div>
 
-  <div style="display:flex;gap:12px;margin-top:16px">
+  <div class="order-actions">
     <a href="/orders" class="btn btn-outline">My Orders</a>
     <a href="/" class="btn btn-orange">Continue Shopping</a>
   </div>
+
 </div>
 {{end}}

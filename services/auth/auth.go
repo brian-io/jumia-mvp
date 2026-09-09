@@ -1,13 +1,13 @@
 package auth
 
 import (
+	"agora/shared/middleware"
+	"agora/shared/models"
+	"agora/shared/store"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"jumia-mvp/shared/middleware"
-	"jumia-mvp/shared/models"
-	"jumia-mvp/shared/store"
 	"net/http"
 	"strings"
 	"time"
@@ -21,7 +21,7 @@ func New(db *store.DB) *Service { return &Service{DB: db} }
 
 func hashPassword(password string) string {
 	h := sha256.New()
-	h.Write([]byte("jumia_salt_2024_" + password))
+	h.Write([]byte("agora_salt_2024_" + password))
 	return hex.EncodeToString(h.Sum(nil))
 }
 
@@ -38,7 +38,9 @@ func (s *Service) Register(name, email, password, role string) (*models.User, er
 	if len(password) < 6 {
 		return nil, fmt.Errorf("password must be at least 6 characters")
 	}
-	if role != "seller" { role = "buyer" }
+	if role != "seller" {
+		role = "buyer"
+	}
 	return s.DB.CreateUser(models.User{
 		Name: name, Email: strings.ToLower(email),
 		PasswordHash: hashPassword(password), Role: role,
@@ -47,7 +49,9 @@ func (s *Service) Register(name, email, password, role string) (*models.User, er
 
 func (s *Service) Login(email, password string) (*models.User, string, error) {
 	user, err := s.DB.GetUserByEmailAndHash(strings.ToLower(email), hashPassword(password))
-	if err != nil { return nil, "", fmt.Errorf("invalid email or password") }
+	if err != nil {
+		return nil, "", fmt.Errorf("invalid email or password")
+	}
 	sessionID := generateSessionID()
 	s.DB.CreateSession(models.Session{
 		ID: sessionID, UserID: user.ID,
@@ -78,7 +82,9 @@ func (s *Service) RegisterRoutes(mux *http.ServeMux, tmpl Tmpl) {
 	mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			msg := ""
-			if r.URL.Query().Get("registered") == "1" { msg = "Registration successful! Please log in." }
+			if r.URL.Query().Get("registered") == "1" {
+				msg = "Registration successful! Please log in."
+			}
 			tmpl.ExecuteTemplate(w, "login.html", map[string]interface{}{"Title": "Login", "Message": msg})
 			return
 		}

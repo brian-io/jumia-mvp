@@ -3,9 +3,9 @@
 package store
 
 import (
+	"agora/shared/models"
 	"encoding/json"
 	"fmt"
-	"jumia-mvp/shared/models"
 	"os"
 	"sort"
 	"strings"
@@ -14,9 +14,9 @@ import (
 )
 
 type DB struct {
-	mu       sync.RWMutex
-	path     string
-	data     *Data
+	mu   sync.RWMutex
+	path string
+	data *Data
 }
 
 type Data struct {
@@ -36,7 +36,7 @@ func Get() *DB {
 	once.Do(func() {
 		path := os.Getenv("DB_PATH")
 		if path == "" {
-			path = "./jumia.json"
+			path = "./agora.json"
 		}
 		instance = &DB{path: path}
 		instance.load()

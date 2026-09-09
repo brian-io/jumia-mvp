@@ -1,11 +1,12 @@
 {{define "register.html"}}
 {{template "base" .}}
 {{end}}
-{{define "register_content"}}
+
+{{define "content"}}
 <div class="container">
   <div class="form-card">
-    <div class="form-title">Create Account 🎉</div>
-    <div class="form-subtitle">Join millions of Kenyans shopping on Jumia</div>
+    <div class="form-title">Create Account</div>
+    <div class="form-subtitle">Join millions of Kenyans shopping on Agora</div>
 
     {{if .Error}}<div class="error-msg">{{.Error}}</div>{{end}}
 
@@ -25,11 +26,11 @@
       <div class="form-group">
         <label>Account type</label>
         <select name="role">
-          <option value="buyer">🛍️ Buyer — I want to shop</option>
-          <option value="seller">🏪 Seller — I want to sell products</option>
+          <option value="buyer">Buyer &mdash; I want to shop</option>
+          <option value="seller">Seller &mdash; I want to sell products</option>
         </select>
       </div>
-      <button type="submit" class="btn btn-orange" style="width:100%;padding:12px;font-size:16px">Create Account →</button>
+      <button type="submit" class="btn btn-orange btn-block">Create Account &rarr;</button>
     </form>
 
     <div class="form-footer">

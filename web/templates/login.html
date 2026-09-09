@@ -2,11 +2,11 @@
 {{template "base" .}}
 {{end}}
 
-{{define "login_content"}}
+{{define "content"}}
 <div class="container">
   <div class="form-card">
-    <div class="form-title">Welcome Back 👋</div>
-    <div class="form-subtitle">Login to your Jumia account</div>
+    <div class="form-title">Welcome Back!</div>
+    <div class="form-subtitle">Login to your Agora account</div>
 
     {{if .Message}}<div class="success-msg">{{.Message}}</div>{{end}}
     {{if .Error}}<div class="error-msg">{{.Error}}</div>{{end}}
@@ -20,17 +20,11 @@
         <label>Password</label>
         <input type="password" name="password" placeholder="Your password" required>
       </div>
-      <button type="submit" class="btn btn-orange" style="width:100%;padding:12px;font-size:16px">Login →</button>
+      <button type="submit" class="btn btn-orange btn-block">Login &rarr;</button>
     </form>
 
     <div class="form-footer">
       Don't have an account? <a href="/register">Sign up free</a>
-    </div>
-
-    <div style="margin-top:20px;padding:16px;background:#fff8f0;border-radius:8px;font-size:13px;color:#666">
-      <strong>Demo accounts:</strong><br>
-      🛍️ Buyer: buyer@demo.ke / demo123<br>
-      🏪 Seller: seller@jumia.ke / test
     </div>
   </div>
 </div>

@@ -1,10 +1,10 @@
 package catalog
 
 import (
+	"agora/shared/middleware"
+	"agora/shared/models"
+	"agora/shared/store"
 	"fmt"
-	"jumia-mvp/shared/middleware"
-	"jumia-mvp/shared/models"
-	"jumia-mvp/shared/store"
 	"net/http"
 	"strconv"
 	"strings"
@@ -15,11 +15,13 @@ type Service struct{ DB *store.DB }
 func New(db *store.DB) *Service { return &Service{DB: db} }
 
 func (s *Service) SeedSampleData() {
-	if len(s.DB.GetProducts("", "")) > 0 { return }
+	if len(s.DB.GetProducts("", "")) > 0 {
+		return
+	}
 
 	// Create seller
 	sellerID := 1
-	s.DB.CreateUser(models.User{Name: "Demo Seller", Email: "seller@jumia.ke", PasswordHash: hashSeller(), Role: "seller"})
+	s.DB.CreateUser(models.User{Name: "Demo Seller", Email: "seller@agora.ke", PasswordHash: hashSeller(), Role: "seller"})
 	products := []models.Product{
 		{Name: "Samsung Galaxy A54", Description: "6.4\" display, 128GB storage, 5000mAh battery", Price: 45000, Stock: 50, Category: "Electronics", ImageURL: "📱", SellerID: sellerID},
 		{Name: "Nike Air Max 270", Description: "Comfortable running shoes with air cushioning", Price: 12500, Stock: 30, Category: "Fashion", ImageURL: "👟", SellerID: sellerID},
@@ -34,11 +36,13 @@ func (s *Service) SeedSampleData() {
 		{Name: "Yoga Mat Premium", Description: "Non-slip, 6mm thick exercise mat", Price: 3200, Stock: 45, Category: "Sports", ImageURL: "🧘", SellerID: sellerID},
 		{Name: "Coffee Maker Deluxe", Description: "12-cup programmable coffee maker", Price: 6800, Stock: 18, Category: "Home & Kitchen", ImageURL: "☕", SellerID: sellerID},
 	}
-	for _, p := range products { s.DB.CreateProduct(p) }
+	for _, p := range products {
+		s.DB.CreateProduct(p)
+	}
 }
 
 func hashSeller() string {
-	// sha256("jumia_salt_2024_" + "test") = 475049209873a22e3ebc338d2aaa7a3b283c207c1d2c3f5957284ef735a2074b
+	// sha256("agora_salt_2024_" + "test") = 475049209873a22e3ebc338d2aaa7a3b283c207c1d2c3f5957284ef735a2074b
 	return "475049209873a22e3ebc338d2aaa7a3b283c207c1d2c3f5957284ef735a2074b"
 }
 
@@ -48,13 +52,16 @@ type Tmpl interface {
 
 func (s *Service) RegisterRoutes(mux *http.ServeMux, tmpl Tmpl) {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" { http.NotFound(w, r); return }
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
 		category := r.URL.Query().Get("category")
 		search := r.URL.Query().Get("q")
 		products := s.DB.GetProducts(category, search)
 		_, loggedIn := middleware.GetUserID(r)
 		tmpl.ExecuteTemplate(w, "index.html", map[string]interface{}{
-			"Title": "Jumia Kenya - Shop Online", "Products": products,
+			"Title": "Agora Kenya - Shop Online", "Products": products,
 			"Categories": s.DB.GetCategories(), "Category": category, "Search": search,
 			"LoggedIn": loggedIn, "UserName": middleware.GetUserName(r), "UserRole": middleware.GetUserRole(r),
 		})
@@ -62,19 +69,28 @@ func (s *Service) RegisterRoutes(mux *http.ServeMux, tmpl Tmpl) {
 
 	mux.HandleFunc("/product/", func(w http.ResponseWriter, r *http.Request) {
 		parts := strings.Split(r.URL.Path, "/")
-		if len(parts) < 3 { http.NotFound(w, r); return }
+		if len(parts) < 3 {
+			http.NotFound(w, r)
+			return
+		}
 		id, _ := strconv.Atoi(parts[2])
 		product, err := s.DB.GetProduct(id)
-		if err != nil { http.NotFound(w, r); return }
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
 		_, loggedIn := middleware.GetUserID(r)
 		tmpl.ExecuteTemplate(w, "product.html", map[string]interface{}{
-			"Title": product.Name + " - Jumia", "Product": product,
+			"Title": product.Name + " - Agora", "Product": product,
 			"LoggedIn": loggedIn, "UserName": middleware.GetUserName(r), "UserRole": middleware.GetUserRole(r),
 		})
 	})
 
 	mux.HandleFunc("/seller/products/new", middleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
-		if middleware.GetUserRole(r) != "seller" { http.Redirect(w, r, "/", http.StatusFound); return }
+		if middleware.GetUserRole(r) != "seller" {
+			http.Redirect(w, r, "/", http.StatusFound)
+			return
+		}
 		if r.Method == http.MethodGet {
 			tmpl.ExecuteTemplate(w, "product_form.html", map[string]interface{}{
 				"Title": "Add Product", "LoggedIn": true,
@@ -103,7 +119,10 @@ func (s *Service) RegisterRoutes(mux *http.ServeMux, tmpl Tmpl) {
 	}))
 
 	mux.HandleFunc("/seller/dashboard", middleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
-		if middleware.GetUserRole(r) != "seller" { http.Redirect(w, r, "/", http.StatusFound); return }
+		if middleware.GetUserRole(r) != "seller" {
+			http.Redirect(w, r, "/", http.StatusFound)
+			return
+		}
 		userID, _ := middleware.GetUserID(r)
 		products := s.DB.GetProductsBySellerID(userID)
 		tmpl.ExecuteTemplate(w, "seller_dashboard.html", map[string]interface{}{

@@ -2,21 +2,32 @@
 {{template "base" .}}
 {{end}}
 
-{{define "index_content"}}
+{{define "content"}}
 <div class="container">
+
   {{if not .Search}}
   <div class="hero">
-    <div>
+    <div class="hero-content">
+      <span class="hero-label">Agora Marketplace</span>
       <h1>Shop Smarter,<br>Live Better</h1>
-      <p>Millions of products at your fingertips.<br>Fast delivery across Kenya.</p>
-      <a href="/register" class="btn" style="background:#fff;color:#f68b1e">Get Started →</a>
+      <p>Millions of products at your fingertips. Fast delivery across Kenya.</p>
+      <a href="/register" class="btn btn-primary">Get Started &rarr;</a>
     </div>
-    <div class="hero-emoji">🛍️</div>
+    <div class="hero-art">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+        <path d="M3 6h18"></path>
+        <path d="M16 10a4 4 0 0 1-8 0"></path>
+      </svg>
+    </div>
   </div>
   {{end}}
 
   {{if .Search}}
-  <h2 class="page-title">Results for "{{.Search}}" {{if .Products}}({{len .Products}} found){{else}}— no results{{end}}</h2>
+  <h2 class="page-title">
+    Results for &ldquo;{{.Search}}&rdquo;
+    {{if .Products}}({{len .Products}} found){{else}}&mdash; no results{{end}}
+  </h2>
   {{end}}
 
   <!-- Category filter -->
@@ -37,13 +48,37 @@
   <div class="product-grid">
     {{range .Products}}
     <div class="product-card" onclick="window.location='/product/{{.ID}}'">
-      <div class="product-img">{{if .ImageURL}}{{.ImageURL}}{{else}}📦{{end}}</div>
+
+      <div class="product-img">
+        {{if .ImageURL}}
+          <span class="product-img-emoji">{{.ImageURL}}</span>
+        {{else}}
+          <span class="product-img-fallback">{{slice .Name 0 1}}</span>
+        {{end}}
+      </div>
+
       <div class="product-info">
         <div class="product-category">{{.Category}}</div>
         <div class="product-name">{{.Name}}</div>
         <div class="product-price">KSh {{printf "%.0f" .Price}}</div>
-        <div class="product-stock">{{if gt .Stock 0}}✅ In stock ({{.Stock}}){{else}}❌ Out of stock{{end}}</div>
+        <div class="product-stock">
+          {{if gt .Stock 0}}
+            <svg class="stock-icon stock-in" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="m9 12 2 2 4-4"></path>
+            </svg>
+            In stock ({{.Stock}})
+          {{else}}
+            <svg class="stock-icon stock-out" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="m15 9-6 6"></path>
+              <path d="m9 9 6 6"></path>
+            </svg>
+            Out of stock
+          {{end}}
+        </div>
       </div>
+
       <div class="product-actions">
         <a href="/product/{{.ID}}" class="btn btn-outline btn-sm">View</a>
         {{if gt .Stock 0}}
@@ -55,16 +90,23 @@
         </form>
         {{end}}
       </div>
+
     </div>
     {{end}}
   </div>
   {{else}}
   <div class="empty-state">
-    <div class="icon">🔍</div>
+    <div class="icon icon-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"></circle>
+        <path d="m21 21-4.3-4.3"></path>
+      </svg>
+    </div>
     <h3>No products found</h3>
     <p>Try a different search term or browse all categories</p>
     <a href="/" class="btn btn-orange">Browse All</a>
   </div>
   {{end}}
+
 </div>
 {{end}}
