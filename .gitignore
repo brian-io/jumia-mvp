@@ -1,8 +1,7 @@
-# Secrets and local config
+# Config
 .env
 .env.*
 !.env.example
-
 
 # OS / editor
 .DS_Store
@@ -10,8 +9,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
-
-
 
 # Build artifacts
 dist/
@@ -21,6 +18,6 @@ out/
 *.o
 *.so
 *.a
-
+*.json
 agora-server
 
