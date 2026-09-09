@@ -1,6 +1,6 @@
-# 🛒 agora MVP — Go Microservices E-Commerce
+# Agora - Microservice E-commerce website
 
-A minimal but **fully launchable** agora-style marketplace built in pure Go.  
+A minimal but **fully launchable** marketplace built in Go.  
 **Zero external dependencies. Single binary. Runs anywhere.**
 
 ---
