@@ -20,4 +20,4 @@ out/
 *.a
 *.json
 agora-server
-
+go.*
