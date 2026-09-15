@@ -1,6 +1,7 @@
 package catalog
 
 import (
+	"agora/shared/csrf"
 	"agora/shared/middleware"
 	"agora/shared/models"
 	"agora/shared/store"
@@ -56,88 +57,345 @@ func (s *Service) RegisterRoutes(mux *http.ServeMux, tmpl Tmpl) {
 			http.NotFound(w, r)
 			return
 		}
+
 		category := r.URL.Query().Get("category")
 		search := r.URL.Query().Get("q")
 		products := s.DB.GetProducts(category, search)
+
 		_, loggedIn := middleware.GetUserID(r)
+
 		tmpl.ExecuteTemplate(w, "index.html", map[string]interface{}{
-			"Title": "Agora Kenya - Shop Online", "Products": products,
-			"Categories": s.DB.GetCategories(), "Category": category, "Search": search,
-			"LoggedIn": loggedIn, "UserName": middleware.GetUserName(r), "UserRole": middleware.GetUserRole(r),
+			"Title":      "Agora Kenya - Shop Online",
+			"Products":   products,
+			"Categories": s.DB.GetCategories(),
+			"Category":   category,
+			"Search":     search,
+			"LoggedIn":   loggedIn,
+			"UserName":   middleware.GetUserName(r),
+			"UserRole":   middleware.GetUserRole(r),
 		})
 	})
 
 	mux.HandleFunc("/product/", func(w http.ResponseWriter, r *http.Request) {
 		parts := strings.Split(r.URL.Path, "/")
+
 		if len(parts) < 3 {
 			http.NotFound(w, r)
 			return
 		}
-		id, _ := strconv.Atoi(parts[2])
+
+		id, err := strconv.Atoi(parts[2])
+		if err != nil || id <= 0 {
+			http.NotFound(w, r)
+			return
+		}
+
 		product, err := s.DB.GetProduct(id)
 		if err != nil {
 			http.NotFound(w, r)
 			return
 		}
+
 		_, loggedIn := middleware.GetUserID(r)
+
 		tmpl.ExecuteTemplate(w, "product.html", map[string]interface{}{
-			"Title": product.Name + " - Agora", "Product": product,
-			"LoggedIn": loggedIn, "UserName": middleware.GetUserName(r), "UserRole": middleware.GetUserRole(r),
+			"Title":    product.Name + " - Agora",
+			"Product":  product,
+			"LoggedIn": loggedIn,
+			"UserName": middleware.GetUserName(r),
+			"UserRole": middleware.GetUserRole(r),
 		})
 	})
 
-	mux.HandleFunc("/seller/products/new", middleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
-		if middleware.GetUserRole(r) != "seller" {
-			http.Redirect(w, r, "/", http.StatusFound)
-			return
-		}
-		if r.Method == http.MethodGet {
-			tmpl.ExecuteTemplate(w, "product_form.html", map[string]interface{}{
-				"Title": "Add Product", "LoggedIn": true,
-				"UserName": middleware.GetUserName(r), "UserRole": middleware.GetUserRole(r),
-			})
-			return
-		}
-		r.ParseForm()
-		price, _ := strconv.ParseFloat(r.FormValue("price"), 64)
-		stock, _ := strconv.Atoi(r.FormValue("stock"))
-		userID, _ := middleware.GetUserID(r)
-		p := models.Product{
-			Name: r.FormValue("name"), Description: r.FormValue("description"),
-			Price: price, Stock: stock, Category: r.FormValue("category"),
-			ImageURL: r.FormValue("image_url"), SellerID: userID,
-		}
-		if p.Name == "" || p.Price <= 0 {
-			tmpl.ExecuteTemplate(w, "product_form.html", map[string]interface{}{
-				"Title": "Add Product", "Error": "Name and price required",
-				"LoggedIn": true, "UserName": middleware.GetUserName(r), "UserRole": middleware.GetUserRole(r),
-			})
-			return
-		}
-		s.DB.CreateProduct(p)
-		http.Redirect(w, r, "/seller/dashboard", http.StatusFound)
-	}))
+	// ── Add product ──────────────────────────────────────
 
-	mux.HandleFunc("/seller/dashboard", middleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
-		if middleware.GetUserRole(r) != "seller" {
-			http.Redirect(w, r, "/", http.StatusFound)
-			return
-		}
-		userID, _ := middleware.GetUserID(r)
-		products := s.DB.GetProductsBySellerID(userID)
-		tmpl.ExecuteTemplate(w, "seller_dashboard.html", map[string]interface{}{
-			"Title": "Seller Dashboard", "Products": products,
-			"LoggedIn": true, "UserName": middleware.GetUserName(r), "UserRole": middleware.GetUserRole(r),
-		})
-	}))
+	mux.HandleFunc(
+		"/seller/products/new",
+		middleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+			if middleware.GetUserRole(r) != "seller" {
+				http.Redirect(w, r, "/", http.StatusFound)
+				return
+			}
 
-	mux.HandleFunc("/seller/products/delete/", middleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
-		parts := strings.Split(r.URL.Path, "/")
-		id, _ := strconv.Atoi(parts[len(parts)-1])
-		userID, _ := middleware.GetUserID(r)
-		s.DB.DeleteProduct(id, userID)
-		http.Redirect(w, r, "/seller/dashboard", http.StatusFound)
-	}))
+			userID, ok := middleware.GetUserID(r)
+			if !ok {
+				http.Redirect(w, r, "/login", http.StatusFound)
+				return
+			}
+
+			if r.Method == http.MethodGet {
+				token, err := csrf.IssueCookie(w, r)
+				if err != nil {
+					http.Error(w, "failed to initialize security token", http.StatusInternalServerError)
+					return
+				}
+
+				tmpl.ExecuteTemplate(w, "product_form.html", map[string]interface{}{
+					"Title":     "Add Product",
+					"LoggedIn":  true,
+					"UserName":  middleware.GetUserName(r),
+					"UserRole":  middleware.GetUserRole(r),
+					"CSRFToken": token,
+				})
+				return
+			}
+
+			if r.Method != http.MethodPost {
+				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+				return
+			}
+
+			if err := csrf.Verify(r); err != nil {
+				tmpl.ExecuteTemplate(w, "product_form.html", map[string]interface{}{
+					"Title":     "Add Product",
+					"Error":     "invalid or expired security token",
+					"LoggedIn":  true,
+					"UserName":  middleware.GetUserName(r),
+					"UserRole":  middleware.GetUserRole(r),
+					"CSRFToken": "",
+				})
+				return
+			}
+
+			if err := r.ParseForm(); err != nil {
+				http.Error(w, "invalid form submission", http.StatusBadRequest)
+				return
+			}
+
+			name := strings.TrimSpace(r.FormValue("name"))
+			description := strings.TrimSpace(r.FormValue("description"))
+			category := strings.TrimSpace(r.FormValue("category"))
+			imageURL := strings.TrimSpace(r.FormValue("image_url"))
+
+			price, err := strconv.ParseFloat(r.FormValue("price"), 64)
+			if err != nil || price <= 0 {
+				s.renderProductFormError(
+					w,
+					r,
+					tmpl,
+					"Enter a valid price.",
+					name,
+					description,
+					category,
+					imageURL,
+				)
+				return
+			}
+
+			stock, err := strconv.Atoi(r.FormValue("stock"))
+			if err != nil || stock < 0 {
+				s.renderProductFormError(
+					w,
+					r,
+					tmpl,
+					"Stock quantity cannot be negative.",
+					name,
+					description,
+					category,
+					imageURL,
+				)
+				return
+			}
+
+			if name == "" {
+				s.renderProductFormError(
+					w,
+					r,
+					tmpl,
+					"Product name is required.",
+					name,
+					description,
+					category,
+					imageURL,
+				)
+				return
+			}
+
+			if len(name) > 200 {
+				s.renderProductFormError(
+					w,
+					r,
+					tmpl,
+					"Product name is too long.",
+					name,
+					description,
+					category,
+					imageURL,
+				)
+				return
+			}
+
+			product := models.Product{
+				Name:        name,
+				Description: description,
+				Price:       price,
+				Stock:       stock,
+				Category:    category,
+				ImageURL:    imageURL,
+				SellerID:    userID,
+			}
+
+			if _, err := s.DB.CreateProduct(product); err != nil {
+				s.renderProductFormError(
+					w,
+					r,
+					tmpl,
+					"Failed to create product.",
+					name,
+					description,
+					category,
+					imageURL,
+				)
+				return
+			}
+
+			http.Redirect(w, r, "/seller/dashboard", http.StatusFound)
+		}),
+	)
+
+	// ── Seller dashboard ─────────────────────────────────
+
+	mux.HandleFunc(
+		"/seller/dashboard",
+		middleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+			if middleware.GetUserRole(r) != "seller" {
+				http.Redirect(w, r, "/", http.StatusFound)
+				return
+			}
+
+			userID, ok := middleware.GetUserID(r)
+			if !ok {
+				http.Redirect(w, r, "/login", http.StatusFound)
+				return
+			}
+
+			if r.Method != http.MethodGet {
+				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+				return
+			}
+
+			token, err := csrf.IssueCookie(w, r)
+			if err != nil {
+				http.Error(w, "failed to initialize security token", http.StatusInternalServerError)
+				return
+			}
+
+			products := s.DB.GetProductsBySellerID(userID)
+
+			tmpl.ExecuteTemplate(w, "seller_dashboard.html", map[string]interface{}{
+				"Title":     "Seller Dashboard",
+				"Products":  products,
+				"LoggedIn":  true,
+				"UserName":  middleware.GetUserName(r),
+				"UserRole":  middleware.GetUserRole(r),
+				"CSRFToken": token,
+			})
+		}),
+	)
+
+	// ── Stock increment/decrement ────────────────────────
+
+	mux.HandleFunc(
+		"/seller/products/stock/",
+		middleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+			if middleware.GetUserRole(r) != "seller" {
+				http.Error(w, "forbidden", http.StatusForbidden)
+				return
+			}
+
+			if r.Method != http.MethodPost {
+				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+				return
+			}
+
+			if err := csrf.Verify(r); err != nil {
+				http.Error(w, "invalid or expired security token", http.StatusForbidden)
+				return
+			}
+
+			userID, ok := middleware.GetUserID(r)
+			if !ok {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			parts := strings.Split(strings.TrimSuffix(r.URL.Path, "/"), "/")
+
+			if len(parts) < 5 {
+				http.NotFound(w, r)
+				return
+			}
+
+			productID, err := strconv.Atoi(parts[4])
+			if err != nil || productID <= 0 {
+				http.NotFound(w, r)
+				return
+			}
+
+			delta, err := strconv.Atoi(r.FormValue("delta"))
+			if err != nil || (delta != 1 && delta != -1) {
+				http.Error(w, "invalid stock adjustment", http.StatusBadRequest)
+				return
+			}
+
+			if _, err := s.DB.UpdateProductStock(productID, userID, delta); err != nil {
+				http.Redirect(
+					w,
+					r,
+					"/seller/dashboard?error="+urlQueryEscape(err.Error()),
+					http.StatusFound,
+				)
+				return
+			}
+
+			http.Redirect(w, r, "/seller/dashboard", http.StatusFound)
+		}),
+	)
+
+	// ── Delete product ───────────────────────────────────
+
+	mux.HandleFunc(
+		"/seller/products/delete/",
+		middleware.RequireAuth(func(w http.ResponseWriter, r *http.Request) {
+			if middleware.GetUserRole(r) != "seller" {
+				http.Error(w, "forbidden", http.StatusForbidden)
+				return
+			}
+
+			if r.Method != http.MethodPost {
+				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+				return
+			}
+
+			if err := csrf.Verify(r); err != nil {
+				http.Error(w, "invalid or expired security token", http.StatusForbidden)
+				return
+			}
+
+			userID, ok := middleware.GetUserID(r)
+			if !ok {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			parts := strings.Split(strings.TrimSuffix(r.URL.Path, "/"), "/")
+
+			if len(parts) < 5 {
+				http.NotFound(w, r)
+				return
+			}
+
+			id, err := strconv.Atoi(parts[4])
+			if err != nil || id <= 0 {
+				http.NotFound(w, r)
+				return
+			}
+
+			s.DB.DeleteProduct(id, userID)
+
+			http.Redirect(w, r, "/seller/dashboard", http.StatusFound)
+		}),
+	)
 }
 
 func init() { _ = fmt.Sprintf } // keep import
