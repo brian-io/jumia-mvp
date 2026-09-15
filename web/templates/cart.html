@@ -49,6 +49,7 @@
             <td class="cell-strong">KSh {{printf "%.0f" .Product.Price}}</td>
             <td>
               <form method="post" action="/cart/update" class="qty-form">
+                <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
                 <input type="hidden" name="product_id" value="{{.ProductID}}">
                 <input type="number" name="quantity" value="{{.Quantity}}" min="0" max="99" class="qty-input">
                 <button type="submit" class="btn btn-sm btn-outline btn-icon" aria-label="Update quantity">
@@ -63,14 +64,16 @@
             </td>
             <td class="cell-price">KSh {{printf "%.0f" (mul .Product.Price (toFloat .Quantity))}}</td>
             <td>
-              <a href="/cart/remove/{{.ProductID}}" class="btn btn-sm btn-red btn-icon" aria-label="Remove item"
-                 onclick="return confirm('Remove this item?')">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 6h18"></path>
-                  <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
-                </svg>
-              </a>
+              <form method="post" action="/cart/remove/{{.ProductID}}" data-confirm="Remove this item from your cart?">
+                <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                <button type="submit" class="btn btn-sm btn-red btn-icon" aria-label="Remove item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18"></path>
+                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+                  </svg>
+                </button>
+              </form>
             </td>
           </tr>
           {{end}}

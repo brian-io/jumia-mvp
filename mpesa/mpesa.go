@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"sync"
@@ -30,13 +31,18 @@ type Client struct {
 }
 
 // NewClientFromEnv builds a Client from MPESA_* environment variables.
-// See .env for the full list.
+// Missing required variables are logged loudly here rather than left to
+// surface as an opaque Safaricom error the first time someone tries to
+// pay. This doesn't hard-fail startup — a local/sandbox setup that
+// intentionally skips a var still boots — but treat any of these
+// warnings as a blocker before deploying to production.
 func NewClientFromEnv() *Client {
 	baseURL := "https://sandbox.safaricom.co.ke"
 	if os.Getenv("MPESA_ENV") == "production" {
 		baseURL = "https://api.safaricom.co.ke"
 	}
-	return &Client{
+
+	c := &Client{
 		consumerKey:    os.Getenv("MPESA_CONSUMER_KEY"),
 		consumerSecret: os.Getenv("MPESA_CONSUMER_SECRET"),
 		shortcode:      os.Getenv("MPESA_SHORTCODE"),
@@ -45,6 +51,24 @@ func NewClientFromEnv() *Client {
 		baseURL:        baseURL,
 		httpClient:     &http.Client{Timeout: 15 * time.Second},
 	}
+
+	for name, val := range map[string]string{
+		"MPESA_CONSUMER_KEY":    c.consumerKey,
+		"MPESA_CONSUMER_SECRET": c.consumerSecret,
+		"MPESA_SHORTCODE":       c.shortcode,
+		"MPESA_PASSKEY":         c.passkey,
+		"MPESA_CALLBACK_URL":    c.callbackURL,
+	} {
+		if val == "" {
+			log.Printf("mpesa: warning: %s is not set — payments will fail until it is", name)
+		}
+	}
+	if c.callbackURL != "" && baseURL == "https://api.safaricom.co.ke" &&
+		len(c.callbackURL) >= 7 && c.callbackURL[:7] == "http://" {
+		log.Printf("mpesa: warning: MPESA_CALLBACK_URL is http:// in production — Safaricom requires https")
+	}
+
+	return c
 }
 
 // accessToken returns a cached OAuth token, refreshing it shortly before
@@ -67,7 +91,10 @@ func (c *Client) accessToken() (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
+	body, readErr := io.ReadAll(resp.Body)
+	if readErr != nil {
+		return "", fmt.Errorf("mpesa: reading oauth response: %w", readErr)
+	}
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("mpesa: oauth failed (%d): %s", resp.StatusCode, body)
 	}
@@ -77,6 +104,9 @@ func (c *Client) accessToken() (string, error) {
 	}
 	if err := json.Unmarshal(body, &out); err != nil {
 		return "", err
+	}
+	if out.AccessToken == "" {
+		return "", fmt.Errorf("mpesa: oauth response had no access_token")
 	}
 	c.token = out.AccessToken
 	c.tokenExpiry = time.Now().Add(50 * time.Minute) // refresh 10 min early
@@ -98,6 +128,10 @@ type STKPushResponse struct {
 // (whole KES). accountReference shows up on the STK prompt and in the
 // callback, so pass something like "Order42".
 func (c *Client) STKPush(phone string, amount int, accountReference, description string) (*STKPushResponse, error) {
+	if amount <= 0 {
+		return nil, fmt.Errorf("mpesa: amount must be positive, got %d", amount)
+	}
+
 	token, err := c.accessToken()
 	if err != nil {
 		return nil, err
@@ -136,7 +170,10 @@ func (c *Client) STKPush(phone string, amount int, accountReference, description
 		return nil, err
 	}
 	defer resp.Body.Close()
-	respBody, _ := io.ReadAll(resp.Body)
+	respBody, readErr := io.ReadAll(resp.Body)
+	if readErr != nil {
+		return nil, fmt.Errorf("mpesa: reading stk push response: %w", readErr)
+	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("mpesa: stk push failed (%d): %s", resp.StatusCode, respBody)
 	}
@@ -181,4 +218,25 @@ func (p *CallbackPayload) MpesaReceipt() string {
 		}
 	}
 	return ""
+}
+
+// Amount pulls "Amount" (the sum actually paid) out of a successful
+// callback's metadata. Used to cross-check against the amount recorded
+// when the STK push was initiated, so a forged or replayed callback
+// can't mark an order paid for less than it costs. Returns 0 if absent,
+// e.g. on a failed/cancelled payment — callers should treat 0 as "no
+// match", not as a valid free payment.
+func (p *CallbackPayload) Amount() float64 {
+	for _, item := range p.Body.StkCallback.CallbackMetadata.Item {
+		if item.Name == "Amount" {
+			switch v := item.Value.(type) {
+			case float64:
+				return v
+			case json.Number:
+				f, _ := v.Float64()
+				return f
+			}
+		}
+	}
+	return 0
 }

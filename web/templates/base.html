@@ -6,22 +6,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{.CSRFToken}}">
 <title>{{.Title}}</title>
 
 <style>
   /* ============================================================
      Theme tokens
-     ------------------------------------------------------------
-     Springfield-inspired palette:
-       Yellow   - primary brand/action color
-       Blue     - secondary/background accent
-       Red      - destructive/attention states
-       Pink     - promotional accent
-       Charcoal - typography and structural elements
-
-     Written mobile-first: base rules target small screens,
-     min-width media queries progressively enhance the layout
-     for tablet (600px), desktop (900px) and wide (1200px).
      ============================================================ */
 
   :root {
@@ -43,6 +33,8 @@
     --border: #E1E5E8;
 
     --success: #2E7D32;
+    --mpesa-green: #3FAE49;
+    --mpesa-green-dark: #2E8B37;
 
     --shadow-sm: 0 2px 6px rgba(0, 0, 0, .10);
     --shadow-md: 0 6px 18px rgba(0, 0, 0, .12);
@@ -51,8 +43,6 @@
     --radius-md: 9px;
     --radius-lg: 14px;
 
-    /* Spacing scale keeps rhythm consistent across every
-       component instead of one-off pixel values. */
     --space-1: 4px;
     --space-2: 8px;
     --space-3: 12px;
@@ -126,7 +116,7 @@
     gap: var(--space-2);
 
     padding: 11px 18px;
-    min-height: 44px; /* comfortable touch target */
+    min-height: 44px;
 
     border: 2px solid transparent;
     border-radius: var(--radius-sm);
@@ -140,6 +130,13 @@
 
   .btn:active {
     transform: translateY(1px);
+  }
+
+  .btn:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 
   .btn-primary {
@@ -172,6 +169,12 @@
     border-color: var(--blue);
   }
 
+  .btn-mpesa {
+    background: var(--mpesa-green);
+    color: #fff;
+    border-color: var(--mpesa-green);
+  }
+
   .btn-sm {
     padding: 8px 14px;
     min-height: 36px;
@@ -189,6 +192,20 @@
     .btn-red:hover { background: var(--red-dark); border-color: var(--red-dark); }
     .btn-outline:hover { background: var(--yellow); border-color: var(--charcoal); }
     .btn-blue:hover { background: #6DBDDF; border-color: #6DBDDF; }
+    .btn-mpesa:hover { background: var(--mpesa-green-dark); border-color: var(--mpesa-green-dark); }
+    .btn:disabled:hover { transform: none; box-shadow: none; }
+  }
+
+  /* Turns a <button> inside a plain POST form (logout, delete, remove)
+     into something that looks like the surrounding nav link / text link
+     it replaces, instead of a form control. */
+  .link-button {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
   }
 
   /* ============================================================
@@ -219,10 +236,6 @@
 
   /* ============================================================
      Navbar — mobile-first
-     ------------------------------------------------------------
-     Small screens: logo + links on one row, search wraps to a
-     full-width second row.
-     Tablet+: everything sits on a single row.
      ============================================================ */
 
   .navbar {
@@ -290,7 +303,8 @@
     gap: var(--space-3);
   }
 
-  .nav-links a {
+  .nav-links a,
+  .nav-links .link-button {
     color: var(--charcoal);
     font-size: 13px;
     font-weight: 700;
@@ -298,7 +312,12 @@
   }
 
   @media (hover: hover) {
-    .nav-links a:hover { color: var(--blue-dark); }
+    .nav-links a:hover,
+    .nav-links .link-button:hover { color: var(--blue-dark); }
+  }
+
+  .nav-logout-form {
+    display: inline;
   }
 
   .nav-user {
@@ -385,7 +404,8 @@
       margin-left: 0;
     }
 
-    .nav-links a {
+    .nav-links a,
+    .nav-links .link-button {
       font-size: 14px;
     }
   }
@@ -469,7 +489,6 @@
     box-shadow: var(--shadow-sm);
   }
 
-  /* Panel — padded surface used for form/summary boxes */
   .panel {
     padding: var(--space-5);
 
@@ -496,8 +515,6 @@
     flex-shrink: 0;
   }
 
-  /* Two-column layout: main column + fixed-width side column,
-     stacks to a single column on narrow screens. */
   .split-layout {
     display: grid;
     grid-template-columns: 1fr;
@@ -511,7 +528,6 @@
     }
   }
 
-  /* Two-up form field row, stacks on very small screens */
   .form-row {
     display: grid;
     grid-template-columns: 1fr;
@@ -534,7 +550,6 @@
     font-size: 12px;
   }
 
-  /* Small icon-and-image "thumb" used for product/order rows */
   .thumb {
     flex-shrink: 0;
     display: flex;
@@ -559,7 +574,6 @@
   .thumb-md { width: 44px; height: 44px; font-size: 24px; }
   .thumb-md .thumb-fallback { font-size: 15px; }
 
-  /* Quantity stepper form used in cart/product tables */
   .qty-form {
     display: flex;
     align-items: center;
@@ -595,12 +609,10 @@
     height: 16px;
   }
 
-  /* Text-color utilities */
   .text-success { color: var(--success); }
   .text-danger  { color: var(--red-dark); }
   .text-muted   { color: var(--muted); }
 
-  /* Small pill label (category tags, etc.) */
   .pill {
     display: inline-block;
     padding: 4px 10px;
@@ -611,7 +623,6 @@
 
   .pill-orange { background: #FFF3E0; color: #E65100; }
 
-  /* Inline icon that sits next to a line of text */
   .inline-icon {
     width: 16px;
     height: 16px;
@@ -621,7 +632,6 @@
     stroke: currentColor;
   }
 
-  /* Muted, centered secondary link */
   .link-muted {
     display: block;
     margin-top: var(--space-3);
@@ -634,7 +644,6 @@
     .link-muted:hover { color: var(--blue-dark); }
   }
 
-  /* Soft callout box (payment info, success notes, etc.) */
   .info-note {
     display: flex;
     gap: var(--space-2);
@@ -660,7 +669,6 @@
 
   .info-note-success svg { stroke: var(--success); }
 
-  /* Trust-badge row on the product detail page */
   .detail-trust {
     display: flex;
     flex-wrap: wrap;
@@ -703,7 +711,7 @@
   }
 
   /* ============================================================
-     Hero — mobile-first, stacked then side by side
+     Hero
      ============================================================ */
 
   .hero {
@@ -850,8 +858,6 @@
     gap: var(--space-2);
     margin-bottom: var(--space-6);
 
-    /* allow horizontal scroll on very small screens without
-       breaking layout if there are many categories */
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -885,7 +891,7 @@
   }
 
   /* ============================================================
-     Product grid — fluid columns, no fixed breakpoints needed
+     Product grid
      ============================================================ */
 
   .product-grid {
@@ -914,6 +920,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    cursor: pointer;
 
     background: var(--surface);
     border: 2px solid #DDE2E5;
@@ -1025,7 +1032,6 @@
     content: "KSh ";
   }
 
-  /* Stock status — colour dot instead of an emoji */
   .product-stock {
     display: flex;
     align-items: center;
@@ -1302,8 +1308,9 @@
   .status-shipped     { background: #E6F5E8; color: #25632A; }
   .status-delivered   { background: #DDF2E0; color: #1B5E20; }
   .status-cancelled   { background: #FFE6E6; color: #A51D1D; }
+  .status-paid        { background: #E2F4E6; color: #1B5E20; }
+  .status-payment_failed { background: #FFE6E6; color: #A51D1D; }
 
-  /* Order confirmation banner */
   .order-success {
     margin-bottom: var(--space-5);
     padding: var(--space-6) var(--space-4);
@@ -1345,7 +1352,6 @@
     font-size: 14px;
   }
 
-  /* Delivery address block */
   .order-address {
     margin-bottom: var(--space-4);
     padding: var(--space-3) var(--space-4);
@@ -1373,7 +1379,6 @@
     font-weight: 800;
   }
 
-  /* Order line items */
   .order-item {
     display: flex;
     align-items: center;
@@ -1471,6 +1476,106 @@
   @media (min-width: 500px) {
     .order-actions { flex-direction: row; }
     .order-actions .btn { flex: 1; }
+  }
+
+  /* ============================================================
+     M-Pesa payment panel
+     ============================================================ */
+
+  .mpesa-brand-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .mpesa-brand-row svg { stroke: var(--mpesa-green); }
+
+  .phone-input-group {
+    display: flex;
+    align-items: stretch;
+  }
+
+  .phone-prefix {
+    display: flex;
+    align-items: center;
+    padding: 0 var(--space-3);
+
+    background: #F3F6F8;
+    border: 2px solid #D9DEE1;
+    border-right: none;
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+
+    color: var(--text);
+    font-weight: 700;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .phone-input-group input {
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0 !important;
+  }
+
+  .mpesa-state {
+    text-align: center;
+    padding: var(--space-4) 0;
+  }
+
+  .mpesa-state h3 {
+    margin: var(--space-3) 0 var(--space-2);
+    color: var(--charcoal);
+    font-size: 18px;
+    font-weight: 850;
+  }
+
+  .mpesa-spinner {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto;
+
+    border: 4px solid #E1E5E8;
+    border-top-color: var(--mpesa-green);
+    border-radius: 50%;
+
+    animation: mpesa-spin 0.9s linear infinite;
+  }
+
+  @keyframes mpesa-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .mpesa-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+    font-size: 26px;
+    font-weight: 900;
+    color: #fff;
+  }
+
+  .mpesa-icon-success { background: var(--success); }
+  .mpesa-icon-failed  { background: var(--red); }
+
+  .mpesa-masked-phone {
+    font-weight: 800;
+    color: var(--charcoal);
+  }
+
+  .mpesa-swahili-note {
+    margin-top: var(--space-1);
+    color: var(--muted);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  .mpesa-amount {
+    color: var(--charcoal);
+    font-weight: 900;
   }
 
   /* ============================================================
@@ -1664,7 +1769,7 @@
   }
 
   /* ============================================================
-     Footer — marketplace-appropriate content
+     Footer
      ============================================================ */
 
   .footer {
@@ -1895,7 +2000,14 @@
 
         <a href="/cart" class="nav-cart">Cart</a>
         <a href="/orders">Orders</a>
-        <a href="/logout">Logout</a>
+
+        <!-- Logout is a CSRF-protected POST, not a plain link: a GET
+             link here could be triggered cross-site (e.g. from an <img>
+             tag on another page) and silently log the user out. -->
+        <form method="post" action="/logout" class="nav-logout-form">
+          <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+          <button type="submit" class="link-button">Logout</button>
+        </form>
 
       {{else}}
 
@@ -1911,10 +2023,6 @@
 
 <!-- ============================================================
      Page content
-     ------------------------------------------------------------
-     Individual page templates define "content".
-     The template engine parses base.html together with the
-     requested page, allowing every page to reuse this block name.
      ============================================================ -->
 
 <main>
@@ -1923,10 +2031,6 @@
 
 <!-- ============================================================
      Global footer
-     ------------------------------------------------------------
-     Standard marketplace footer: brand blurb + trust badges,
-     shopper links, seller links, support links, then a payment
-     methods / social / copyright bar.
      ============================================================ -->
 
 <footer class="footer">
@@ -2006,6 +2110,8 @@
   </div>
 
 </footer>
+
+<script src="/static/js/agora.js" defer></script>
 
 </body>
 </html>

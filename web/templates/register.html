@@ -11,17 +11,19 @@
     {{if .Error}}<div class="error-msg">{{.Error}}</div>{{end}}
 
     <form method="post" action="/register">
+      <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+
       <div class="form-group">
         <label>Full name</label>
-        <input type="text" name="name" placeholder="John Kamau" required autofocus>
+        <input type="text" name="name" placeholder="John Kamau" required autofocus maxlength="200">
       </div>
       <div class="form-group">
         <label>Email address</label>
-        <input type="email" name="email" placeholder="you@example.com" required>
+        <input type="email" name="email" placeholder="you@example.com" required maxlength="254">
       </div>
       <div class="form-group">
-        <label>Password (min 6 characters)</label>
-        <input type="password" name="password" placeholder="Create a strong password" required>
+        <label>Password (8–72 characters)</label>
+        <input type="password" name="password" placeholder="Create a strong password" required minlength="8" maxlength="72">
       </div>
       <div class="form-group">
         <label>Account type</label>

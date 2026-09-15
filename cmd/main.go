@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/joho/godotenv"
+
 	authsvc "agora/services/auth"
 	cartsvc "agora/services/cart"
 	catalogsvc "agora/services/catalog"
@@ -152,6 +154,12 @@ func hashPassword(password string) string {
 }
 
 func main() {
+	// Load environment variables from the .env file before any application
+	// component attempts to read configuration through os.Getenv().
+	if err := godotenv.Load(); err != nil {
+		log.Printf("warning: failed to load .env file: %v", err)
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -185,7 +193,7 @@ func main() {
 		Name:         "Demo Buyer",
 		Email:        "buyer@demo.ke",
 		PasswordHash: hashPassword("demo123"),
-		Role:         "buyer",
+		Role:          "buyer",
 	})
 
 	// Register application routes.
@@ -228,3 +236,4 @@ func main() {
 		log.Fatalf("server stopped: %v", err)
 	}
 }
+

@@ -1,7 +1,8 @@
 // Package store is a PostgreSQL-backed data store using plain relational
 // columns only — no JSON columns, no marshaling on the hot path. Every
 // exported type and method signature matches the original store, so
-// calling code does not need to change.
+// calling code does not need to change (aside from the login-related
+// methods described below).
 package store
 
 import (
@@ -55,9 +56,9 @@ func dsnFromEnv() string {
 	}
 	host := getenvDefault("PGHOST", "localhost")
 	port := getenvDefault("PGPORT", "5432")
-	user := getenvDefault("PGUSER", "postgres")
+	user := getenvDefault("PGUSER", "agora")
 	pass := os.Getenv("PGPASSWORD")
-	name := getenvDefault("PGDATABASE", "agora")
+	name := getenvDefault("PGDATABASE", "agorago")
 	sslmode := getenvDefault("PGSSLMODE", "disable")
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		host, port, user, pass, name, sslmode)
@@ -217,14 +218,19 @@ func (db *DB) CreateUser(u models.User) (*models.User, error) {
 	return &u, nil
 }
 
-func (db *DB) GetUserByEmailAndHash(email, hash string) (*models.User, error) {
+// GetUserByEmail looks a user up by email only. bcrypt hashes are salted
+// per-user, so the password can no longer be checked inside the SQL
+// WHERE clause the way an old "email AND hash" query could — the caller
+// must fetch the stored hash and verify it in application code with
+// bcrypt.CompareHashAndPassword.
+func (db *DB) GetUserByEmail(email string) (*models.User, error) {
 	row := db.conn.QueryRow(
-		`SELECT `+userCols+` FROM users WHERE LOWER(email) = LOWER($1) AND password_hash = $2`,
-		email, hash,
+		`SELECT `+userCols+` FROM users WHERE LOWER(email) = LOWER($1)`,
+		email,
 	)
 	u, err := scanUser(row)
 	if err != nil {
-		return nil, fmt.Errorf("invalid credentials")
+		return nil, fmt.Errorf("user not found")
 	}
 	return u, nil
 }
@@ -236,6 +242,14 @@ func (db *DB) GetUserByID(id int) (*models.User, error) {
 		return nil, fmt.Errorf("user not found")
 	}
 	return u, nil
+}
+
+// UpdateUserPasswordHash is used to transparently upgrade a legacy
+// password hash to bcrypt the first time that user logs in successfully,
+// and would also back a future "change password" feature.
+func (db *DB) UpdateUserPasswordHash(userID int, hash string) error {
+	_, err := db.conn.Exec(`UPDATE users SET password_hash = $1 WHERE id = $2`, hash, userID)
+	return err
 }
 
 // ── Sessions ──────────────────────────────────────────
@@ -375,12 +389,97 @@ func (db *DB) GetCategories() []string {
 	return cats
 }
 
-// UpdateProductStock is a single atomic UPDATE now that there's no JSON
-// copy of the row to keep in sync — no read-modify-write needed.
-func (db *DB) UpdateProductStock(productID, delta int) {
-	db.conn.Exec(`UPDATE products SET stock = stock + $1 WHERE id = $2`, delta, productID)
-}
+// UpdateProductStock adjusts a product's stock atomically.
+//
+// A positive delta increments stock.
+// A negative delta decrements stock.
+//
+// The update is seller-scoped so a seller cannot modify another seller's
+// inventory. Stock can never become negative.
+//
+// The returned int is the resulting stock level.
+func (db *DB) UpdateProductStock(productID, sellerID, delta int) (int, error) {
+	if productID <= 0 {
+		return 0, fmt.Errorf("invalid product")
+	}
 
+	if sellerID <= 0 {
+		return 0, fmt.Errorf("invalid seller")
+	}
+
+	if delta == 0 {
+		var stock int
+
+		err := db.conn.QueryRow(
+			`SELECT stock
+			 FROM products
+			 WHERE id = $1 AND seller_id = $2`,
+			productID,
+			sellerID,
+		).Scan(&stock)
+
+		if err != nil {
+			return 0, fmt.Errorf("product not found")
+		}
+
+		return stock, nil
+	}
+
+	var stock int
+
+	if delta < 0 {
+		// The WHERE clause prevents stock from going below zero.
+		err := db.conn.QueryRow(
+			`UPDATE products
+			 SET stock = stock + $1
+			 WHERE id = $2
+			   AND seller_id = $3
+			   AND stock + $1 >= 0
+			 RETURNING stock`,
+			delta,
+			productID,
+			sellerID,
+		).Scan(&stock)
+
+		if err != nil {
+			// Distinguish a missing product from an insufficient stock
+			// condition so the handler can present a useful message.
+			var currentStock int
+
+			checkErr := db.conn.QueryRow(
+				`SELECT stock
+				 FROM products
+				 WHERE id = $1 AND seller_id = $2`,
+				productID,
+				sellerID,
+			).Scan(&currentStock)
+
+			if checkErr != nil {
+				return 0, fmt.Errorf("product not found")
+			}
+
+			return 0, fmt.Errorf("stock cannot go below zero")
+		}
+
+		return stock, nil
+	}
+
+	err := db.conn.QueryRow(
+		`UPDATE products
+		 SET stock = stock + $1
+		 WHERE id = $2 AND seller_id = $3
+		 RETURNING stock`,
+		delta,
+		productID,
+		sellerID,
+	).Scan(&stock)
+
+	if err != nil {
+		return 0, fmt.Errorf("product not found")
+	}
+
+	return stock, nil
+}
 // ── Cart ──────────────────────────────────────────────
 
 func (db *DB) GetCartItems(userID int) []models.CartItem {
@@ -452,6 +551,18 @@ func (db *DB) ClearCart(userID int) {
 
 func (db *DB) CreateOrder(o models.Order, items []models.OrderItem) (*models.Order, error) {
 	err := db.withTx(func(tx *sql.Tx) error {
+		if len(items) == 0 {
+			return fmt.Errorf("order contains no items")
+		}
+
+		if o.Total <= 0 {
+			return fmt.Errorf("order total must be positive")
+		}
+
+		if strings.TrimSpace(o.Address) == "" {
+			return fmt.Errorf("delivery address is required")
+		}
+
 		if err := tx.QueryRow(
 			`INSERT INTO orders (user_id, total, status, address, created_at)
 			 VALUES ($1, $2, $3, $4, now())
@@ -462,23 +573,72 @@ func (db *DB) CreateOrder(o models.Order, items []models.OrderItem) (*models.Ord
 		}
 
 		for i := range items {
+			if items[i].ProductID <= 0 {
+				return fmt.Errorf("invalid product")
+			}
+
+			if items[i].Quantity <= 0 {
+				return fmt.Errorf("invalid quantity for product %d", items[i].ProductID)
+			}
+
+			var currentStock int
+
+			err := tx.QueryRow(
+				`SELECT stock
+				 FROM products
+				 WHERE id = $1
+				 FOR UPDATE`,
+				items[i].ProductID,
+			).Scan(&currentStock)
+
+			if err != nil {
+				return fmt.Errorf("product %d not found", items[i].ProductID)
+			}
+
+			if currentStock < items[i].Quantity {
+				return fmt.Errorf(
+					"insufficient stock for product %d",
+					items[i].ProductID,
+				)
+			}
+
 			items[i].OrderID = o.ID
+
 			if err := tx.QueryRow(
-				`INSERT INTO order_items (order_id, product_id, quantity, price)
-				 VALUES ($1, $2, $3, $4) RETURNING id`,
-				items[i].OrderID, items[i].ProductID, items[i].Quantity, items[i].Price,
+				`INSERT INTO order_items (
+					order_id,
+					product_id,
+					quantity,
+					price
+				)
+				VALUES ($1, $2, $3, $4)
+				RETURNING id`,
+				items[i].OrderID,
+				items[i].ProductID,
+				items[i].Quantity,
+				items[i].Price,
 			).Scan(&items[i].ID); err != nil {
 				return err
 			}
-			if _, err := tx.Exec(`UPDATE products SET stock = stock - $1 WHERE id = $2`, items[i].Quantity, items[i].ProductID); err != nil {
+
+			if _, err := tx.Exec(
+				`UPDATE products
+				 SET stock = stock - $1
+				 WHERE id = $2`,
+				items[i].Quantity,
+				items[i].ProductID,
+			); err != nil {
 				return err
 			}
 		}
+
 		return nil
 	})
+
 	if err != nil {
 		return nil, err
 	}
+
 	o.Items = items
 	return &o, nil
 }
@@ -549,9 +709,10 @@ func (db *DB) GetOrder(orderID, userID int) (*models.Order, error) {
 	return &o, nil
 }
 
-// UpdateOrderStatus sets an order's status directly — e.g. "shipped" or
-// "cancelled". Prefer UpdatePaymentResult below when the change comes
-// from a payment callback, since that also keeps the payments row synced.
+// UpdateOrderStatus sets an order's status directly — e.g. "shipped",
+// "cancelled", or "cash_on_delivery". Prefer UpdatePaymentResult below
+// when the change comes from a payment callback, since that also keeps
+// the payments row synced.
 func (db *DB) UpdateOrderStatus(orderID int, status string) error {
 	_, err := db.conn.Exec(`UPDATE orders SET status = $1 WHERE id = $2`, status, orderID)
 	return err

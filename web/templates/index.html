@@ -5,108 +5,109 @@
 {{define "content"}}
 <div class="container">
 
-  {{if not .Search}}
-  <div class="hero">
-    <div class="hero-content">
-      <span class="hero-label">Agora Marketplace</span>
-      <h1>Shop Smarter,<br>Live Better</h1>
-      <p>Millions of products at your fingertips. Fast delivery across Kenya.</p>
-      <a href="/register" class="btn btn-primary">Get Started &rarr;</a>
-    </div>
-    <div class="hero-art">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
-        <path d="M3 6h18"></path>
-        <path d="M16 10a4 4 0 0 1-8 0"></path>
-      </svg>
-    </div>
-  </div>
-  {{end}}
+{{if not .Search}}
+<div class="hero">
+<div class="hero-content">
+<span class="hero-label">Agora Marketplace</span>
+<h1>Shop Smarter,<br>Live Better</h1>
+<p>Millions of products at your fingertips. Fast delivery across Kenya.</p>
+<a href="/register" class="btn btn-primary">Get Started &rarr;</a>
+</div>
+<div class="hero-art">
+<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+<path d="M3 6h18"></path>
+<path d="M16 10a4 4 0 0 1-8 0"></path>
+</svg>
+</div>
+</div>
+{{end}}
 
-  {{if .Search}}
-  <h2 class="page-title">
+{{if .Search}}
+<h2 class="page-title">
     Results for &ldquo;{{.Search}}&rdquo;
-    {{if .Products}}({{len .Products}} found){{else}}&mdash; no results{{end}}
-  </h2>
-  {{end}}
+{{if .Products}}({{len .Products}} found){{else}}&mdash; no results{{end}}
+</h2>
+{{end}}
 
-  <!-- Category filter -->
-  {{if .Categories}}
-  <div class="category-bar">
-    <a href="/" class="cat-pill {{if not .Category}}active{{end}}">All</a>
-    {{range .Categories}}
-    <a href="/?category={{.}}" class="cat-pill {{if eq . $.Category}}active{{end}}">{{.}}</a>
-    {{end}}
-  </div>
-  {{end}}
+<!-- Category filter -->
+{{if .Categories}}
+<div class="category-bar">
+<a href="/" class="cat-pill {{if not .Category}}active{{end}}">All</a>
+{{range .Categories}}
+<a href="/?category={{.}}" class="cat-pill {{if eq . $.Category}}active{{end}}">{{.}}</a>
+{{end}}
+</div>
+{{end}}
 
-  {{if .Category}}
-  <h2 class="page-title">{{.Category}}</h2>
-  {{end}}
+{{if .Category}}
+<h2 class="page-title">{{.Category}}</h2>
+{{end}}
 
-  {{if .Products}}
-  <div class="product-grid">
-    {{range .Products}}
-    <div class="product-card" onclick="window.location='/product/{{.ID}}'">
+{{if .Products}}
+<div class="product-grid">
+{{range .Products}}
+<div class="product-card" data-navigate="/product/{{.ID}}">
 
-      <div class="product-img">
-        {{if .ImageURL}}
-          <span class="product-img-emoji">{{.ImageURL}}</span>
-        {{else}}
-          <span class="product-img-fallback">{{slice .Name 0 1}}</span>
-        {{end}}
-      </div>
+<div class="product-img">
+{{if .ImageURL}}
+<span class="product-img-emoji">{{.ImageURL}}</span>
+{{else}}
+<span class="product-img-fallback">{{slice .Name 0 1}}</span>
+{{end}}
+</div>
 
-      <div class="product-info">
-        <div class="product-category">{{.Category}}</div>
-        <div class="product-name">{{.Name}}</div>
-        <div class="product-price">KSh {{printf "%.0f" .Price}}</div>
-        <div class="product-stock">
-          {{if gt .Stock 0}}
-            <svg class="stock-icon stock-in" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="m9 12 2 2 4-4"></path>
-            </svg>
+<div class="product-info">
+<div class="product-category">{{.Category}}</div>
+<div class="product-name">{{.Name}}</div>
+<div class="product-price">KSh {{printf "%.0f" .Price}}</div>
+<div class="product-stock">
+{{if gt .Stock 0}}
+<svg class="stock-icon stock-in" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10"></circle>
+<path d="m9 12 2 2 4-4"></path>
+</svg>
             In stock ({{.Stock}})
-          {{else}}
-            <svg class="stock-icon stock-out" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="m15 9-6 6"></path>
-              <path d="m9 9 6 6"></path>
-            </svg>
+{{else}}
+<svg class="stock-icon stock-out" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10"></circle>
+<path d="m15 9-6 6"></path>
+<path d="m9 9 6 6"></path>
+</svg>
             Out of stock
-          {{end}}
-        </div>
-      </div>
+{{end}}
+</div>
+</div>
 
-      <div class="product-actions">
-        <a href="/product/{{.ID}}" class="btn btn-outline btn-sm">View</a>
-        {{if gt .Stock 0}}
-        <form method="post" action="/cart/add" style="display:inline" onclick="event.stopPropagation()">
-          <input type="hidden" name="product_id" value="{{.ID}}">
-          <input type="hidden" name="quantity" value="1">
-          <input type="hidden" name="redirect" value="/">
-          <button type="submit" class="btn btn-orange btn-sm">Add to Cart</button>
-        </form>
-        {{end}}
-      </div>
+<div class="product-actions" data-stop-nav>
+<a href="/product/{{.ID}}" class="btn btn-outline btn-sm">View</a>
+{{if gt .Stock 0}}
+<form method="post" action="/cart/add" style="display:inline">
+<input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+<input type="hidden" name="product_id" value="{{.ID}}">
+<input type="hidden" name="quantity" value="1">
+<input type="hidden" name="redirect" value="/">
+<button type="submit" class="btn btn-orange btn-sm">Add to Cart</button>
+</form>
+{{end}}
+</div>
 
-    </div>
-    {{end}}
-  </div>
-  {{else}}
-  <div class="empty-state">
-    <div class="icon icon-search">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="7"></circle>
-        <path d="m21 21-4.3-4.3"></path>
-      </svg>
-    </div>
-    <h3>No products found</h3>
-    <p>Try a different search term or browse all categories</p>
-    <a href="/" class="btn btn-orange">Browse All</a>
-  </div>
-  {{end}}
+</div>
+{{end}}
+</div>
+{{else}}
+<div class="empty-state">
+<div class="icon icon-search">
+<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="11" cy="11" r="7"></circle>
+<path d="m21 21-4.3-4.3"></path>
+</svg>
+</div>
+<h3>No products found</h3>
+<p>Try a different search term or browse all categories</p>
+<a href="/" class="btn btn-orange">Browse All</a>
+</div>
+{{end}}
 
 </div>
 {{end}}

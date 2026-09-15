@@ -5,75 +5,204 @@
 {{define "content"}}
 <div class="container">
 
-  <h1 class="page-title">
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="1" y="4" width="22" height="16" rx="2"></rect>
-      <path d="M1 10h22"></path>
-    </svg>
+<h1 class="page-title">
+<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1" y="4" width="22" height="16" rx="2"></rect>
+<path d="M1 10h22"></path>
+</svg>
     Checkout
-  </h1>
+</h1>
 
-  {{if .Error}}<div class="error-msg">{{.Error}}</div>{{end}}
+{{if .Error}}<div class="error-msg">{{.Error}}</div>{{end}}
 
-  <div class="split-layout">
+<div class="split-layout">
 
-    <div class="panel">
-      <h2 class="panel-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0Z"></path>
-          <circle cx="12" cy="10" r="3"></circle>
-        </svg>
+<div class="panel">
+<h2 class="panel-title">
+<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0Z"></path>
+<circle cx="12" cy="10" r="3"></circle>
+</svg>
         Delivery Details
-      </h2>
+</h2>
 
-      <form method="post" action="/checkout">
-        <div class="form-group">
-          <label>Full delivery address</label>
-          <textarea name="address" rows="3" placeholder="e.g. 123 Kimathi Street, Nairobi CBD, Nairobi 00100" required></textarea>
-        </div>
+<form method="post" action="/checkout" id="checkout-form">
+<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 
-        <div class="info-note info-note-success">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="1" y="4" width="22" height="16" rx="2"></rect>
-            <path d="M1 10h22"></path>
-          </svg>
-          <span>
-            <strong>Payment:</strong> Cash on Delivery / M-Pesa on delivery.<br>
-            <span class="text-muted">No card details needed &mdash; pay when your order arrives.</span>
-          </span>
-        </div>
+<div class="form-group">
+<label>Full delivery address</label>
+<textarea name="address" rows="3" placeholder="e.g. 123 Kimathi Street, Nairobi CBD, Nairobi 00100" required>{{.Address}}</textarea>
+</div>
 
-        <button type="submit" class="btn btn-orange btn-block">Place Order &rarr;</button>
-      </form>
-    </div>
+<div class="form-group">
+<label>Payment method</label>
+<div class="payment-options">
 
-    <div class="panel">
-      <h3 class="panel-title">Order Items ({{len .Items}})</h3>
-      {{range .Items}}
-      <div class="order-item">
-        <div class="order-item-left">
-          <div class="thumb thumb-sm">
-            {{if .Product.ImageURL}}
-              {{.Product.ImageURL}}
-            {{else}}
-              <span class="thumb-fallback">{{slice .Product.Name 0 1}}</span>
-            {{end}}
-          </div>
-          <div>
-            <div class="order-item-name">{{.Product.Name}}</div>
-            <div class="order-item-meta">Qty: {{.Quantity}}</div>
-          </div>
-        </div>
-        <div class="order-item-subtotal">KSh {{printf "%.0f" (mul .Product.Price (toFloat .Quantity))}}</div>
-      </div>
-      {{end}}
-      <div class="order-total-row">
-        <span>Total</span>
-        <span>KSh {{printf "%.0f" .Total}}</span>
-      </div>
-    </div>
+<label class="payment-option">
+<input type="radio" name="payment_method" value="mpesa" checked>
+<span class="payment-option-body">
+<span class="payment-option-title">
+<span class="mpesa-badge">M-PESA</span>
+Pay now with M-Pesa
+</span>
+<span class="payment-option-desc">Get a prompt on your phone — enter your M-Pesa PIN to pay instantly.</span>
+</span>
+</label>
 
-  </div>
+<label class="payment-option">
+<input type="radio" name="payment_method" value="cod">
+<span class="payment-option-body">
+<span class="payment-option-title">Pay on Delivery</span>
+<span class="payment-option-desc">Pay cash or M-Pesa to the rider when your order arrives.</span>
+</span>
+</label>
+
+</div>
+</div>
+
+<div class="form-group" id="mpesa-phone-group">
+<label for="mpesa-phone">M-Pesa phone number</label>
+<input
+  type="tel"
+  inputmode="numeric"
+  id="mpesa-phone"
+  name="phone"
+  placeholder="07XX XXX XXX"
+  autocomplete="tel"
+  pattern="^(?:\+?254|0)?[17]\d{8}$"
+  title="Enter a Safaricom number, e.g. 0712345678"
+  value="{{.Phone}}"
+>
+<div class="form-help">We'll send a payment prompt to this number — it must be M-Pesa registered.</div>
+</div>
+
+<div class="info-note info-note-success">
+<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3" y="11" width="18" height="11" rx="2"></rect>
+<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+</svg>
+<span>
+<strong>Secure checkout.</strong>
+<span class="text-muted">Payment is processed directly by Safaricom — Agora never sees your M-Pesa PIN.</span>
+</span>
+</div>
+
+<button type="submit" class="btn btn-orange btn-block" id="checkout-submit">Place Order &rarr;</button>
+</form>
+</div>
+
+<div class="panel">
+<h3 class="panel-title">Order Items ({{len .Items}})</h3>
+{{range .Items}}
+<div class="order-item">
+<div class="order-item-left">
+<div class="thumb thumb-sm">
+{{if .Product.ImageURL}}
+{{.Product.ImageURL}}
+{{else}}
+<span class="thumb-fallback">{{slice .Product.Name 0 1}}</span>
+{{end}}
+</div>
+<div>
+<div class="order-item-name">{{.Product.Name}}</div>
+<div class="order-item-meta">Qty: {{.Quantity}}</div>
+</div>
+</div>
+<div class="order-item-subtotal">KSh {{printf "%.0f" (mul .Product.Price (toFloat .Quantity))}}</div>
+</div>
+{{end}}
+<div class="order-total-row">
+<span>Total</span>
+<span>KSh {{printf "%.0f" .Total}}</span>
+</div>
+</div>
+
+</div>
+
+<style>
+  .payment-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .payment-option {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-4);
+
+    background: #fff;
+    border: 2px solid #D9DEE1;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+
+  .payment-option:has(input:checked) {
+    border-color: var(--charcoal);
+    box-shadow: 3px 3px 0 var(--yellow);
+  }
+
+  .payment-option input[type="radio"] {
+    margin-top: 3px;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--orange);
+    flex-shrink: 0;
+  }
+
+  .payment-option-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .payment-option-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--charcoal);
+    font-weight: 800;
+    font-size: 14px;
+  }
+
+  .payment-option-desc {
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .mpesa-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    background: #00A651; /* Safaricom M-Pesa green */
+    color: #fff;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .3px;
+  }
+</style>
+
+<script>
+(function () {
+  var form = document.getElementById('checkout-form');
+  var phoneGroup = document.getElementById('mpesa-phone-group');
+  var phoneInput = document.getElementById('mpesa-phone');
+  var radios = form.querySelectorAll('input[name="payment_method"]');
+
+  function sync() {
+    var checked = form.querySelector('input[name="payment_method"]:checked');
+    var isMpesa = checked && checked.value === 'mpesa';
+    phoneGroup.style.display = isMpesa ? '' : 'none';
+    phoneInput.required = !!isMpesa;
+  }
+  for (var i = 0; i < radios.length; i++) {
+    radios[i].addEventListener('change', sync);
+  }
+  sync();
+})();
+</script>
 
 </div>
 {{end}}

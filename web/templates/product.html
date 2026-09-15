@@ -42,9 +42,12 @@
 
       {{if and .LoggedIn (gt .Product.Stock 0)}}
       <form method="post" action="/cart/add" class="detail-add-form">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <input type="hidden" name="product_id" value="{{.Product.ID}}">
+
         <label>Qty:</label>
         <input type="number" name="quantity" value="1" min="1" max="{{.Product.Stock}}" class="qty-input">
+
         <button type="submit" class="btn btn-orange">
           <svg class="inline-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="9" cy="21" r="1"></circle>
